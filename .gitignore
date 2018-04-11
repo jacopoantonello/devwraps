@@ -1,0 +1,6 @@
+.directory
+build/
+bmc/bmc.c
+thorcam/thorcam.c
+ciusb/ciusb.cpp
+*.pyd
