@@ -157,3 +157,6 @@ cdef class CIUsb:
         else:
             raise NotImplementedError(name)
         return u
+
+    def get_transform(self):
+        return None
