@@ -795,6 +795,12 @@ cdef class ThorCam:
         else:
             return None
 
+    def get_image_dtype(self):
+        return 'uint8'
+
+    def get_image_max(self):
+        return 0xff
+
     def reset(self):
         if self.phCam:
             ret = is_ResetToDefault(self.phCam)
