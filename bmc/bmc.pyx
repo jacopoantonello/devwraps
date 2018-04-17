@@ -175,3 +175,9 @@ cdef class BMC:
 
     def get_transform(self):
         return None
+
+    def get_serial_number(self):
+        if self.opened:
+            return self.serial_number
+        else:
+            return None

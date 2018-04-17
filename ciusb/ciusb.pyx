@@ -33,6 +33,7 @@ cdef class CIUsb:
     cdef CCIUsb c_ciusb
     cdef unsigned short array2[160]
     cdef int opened
+    cdef skip
 
     def __cinit__(self):
         self.c_ciusb = CCIUsb()
@@ -43,6 +44,7 @@ cdef class CIUsb:
             raise Exception('no device found')
         else:
             self.opened = 1
+            self.skip = skip
 
     def write(self, np.ndarray[double, ndim=1, mode='c'] array1 not None):
         """Write actuators.
@@ -160,3 +162,9 @@ cdef class CIUsb:
 
     def get_transform(self):
         return None
+
+    def get_serial_number(self):
+        if self.opened:
+            return self.serial_number
+        else:
+            return None

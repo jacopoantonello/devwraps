@@ -720,6 +720,18 @@ cdef class ThorCam:
 
             self.phCam = 0
 
+    def get_serial_number(self):
+        cdef BOARDINFO info
+
+        if self.phCam:
+            ret = is_GetCameraInfo(self.phCam, &info)
+            if ret != IS_SUCCESS:
+                raise Exception('Failed to load camera info')
+
+            return info.SerNo.decode('utf-8')
+        else:
+            return None
+
     def get_camera_info(self):
         """Get camera info.
 
