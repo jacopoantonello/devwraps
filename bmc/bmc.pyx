@@ -193,6 +193,15 @@ cdef class BMC:
                 u[c] = s
                 c += 1
                 s *= -1
+        elif name == 'arrow':
+            inds = np.array([
+                20, 31, 42, 53, 64, 75, 86, 97, 108, 119,
+                16, 17, 18, 19,
+                29, 30,
+                32, 44, 56, 68,
+                43, 55,
+                ])
+            u[inds] = mag
         else:
             raise NotImplementedError(name)
         return u
