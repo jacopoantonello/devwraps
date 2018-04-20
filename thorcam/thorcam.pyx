@@ -143,7 +143,7 @@ cdef class ThorCam:
         else:
             return num
 
-    def get_camera_list(self):
+    def get_devices(self):
         cdef int ret
         cdef int num
         cdef UC480_CAMERA_LIST *clist
@@ -160,7 +160,7 @@ cdef class ThorCam:
             clist = <UC480_CAMERA_LIST *>malloc(
                 sizeof(unsigned long) + num*sizeof(UC480_CAMERA_INFO))
             if clist == NULL:
-                raise MemoryError('get_camera_list')
+                raise MemoryError('get_devices')
 
             clist.dwCount = num
             ret = is_GetCameraList(clist)
