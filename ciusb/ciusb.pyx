@@ -24,6 +24,7 @@ cdef extern from "cciusb.h" namespace "shapes":
     cdef cppclass CCIUsb:
         CCIUsb() except +
         int open(int skip) except +
+        int get_devices() except +
         void write(unsigned short *values, int vsize) except +
         int size()
         void close()
@@ -33,18 +34,36 @@ cdef class CIUsb:
     cdef CCIUsb c_ciusb
     cdef unsigned short array2[160]
     cdef int opened
-    cdef skip
+    cdef int dev
 
     def __cinit__(self):
         self.c_ciusb = CCIUsb()
         self.opened = 0
+        self.dev = -1
 
-    def open(self, int skip=0):
-        if self.c_ciusb.open(skip):
+    def open(self, dev=None):
+        if self.opened and dev is not None:
+            # already opened but a name or id was specified
+            raise Exception('dm already opened')
+        elif self.opened:
+            # open has been called twice, keep quiet
+            return
+
+        if self.c_ciusb.get_devices() == 0:
             raise Exception('no device found')
+        elif dev is None:
+            dev = 0
+        elif type(dev) == str:
+            dev = int(dev)
+
+        if self.c_ciusb.open(dev):
+            raise Exception('device {} not found'.format(dev))
         else:
             self.opened = 1
-            self.skip = skip
+            self.dev = dev
+
+    def get_devices(self):
+        return [str(i) for i in range(self.c_ciusb.get_devices())]
 
     def write(self, np.ndarray[double, ndim=1, mode='c'] array1 not None):
         """Write actuators.
@@ -114,6 +133,7 @@ cdef class CIUsb:
         if self.opened:
             self.c_ciusb.close()
             self.opened = 0
+            self.dev = -1
 
     def preset(self, name, mag=0.7):
         u = np.zeros((140,))
@@ -165,6 +185,6 @@ cdef class CIUsb:
 
     def get_serial_number(self):
         if self.opened:
-            return str(self.skip)
+            return str(self.dev)
         else:
             return None

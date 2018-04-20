@@ -38,7 +38,8 @@ namespace shapes {
     public:
         CCIUsb();
         ~CCIUsb();
-        int open(int skip);
+ 				int open(int skip);
+				int get_devices();
         void write(unsigned short *values, int vsize);
         int size();
         void close();

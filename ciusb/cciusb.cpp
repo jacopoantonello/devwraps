@@ -12,18 +12,8 @@ namespace shapes {
 	CCIUsb::CCIUsb() {
 		mydevice = -1;
 		pIHostDrv = NULL;
+
 		CoInitialize(NULL);
-	}
-
-	CCIUsb::~CCIUsb() { }
-
-	int CCIUsb::open(int skip) {
-		long lCurDev = -1;
-		long lStatus = 0;
-
-		if (mydevice != -1) {
-			throw std::invalid_argument("Device already opened");
-		}
 
 		/*
 		 * Creates a single uninitialized object of the class associated with
@@ -33,12 +23,22 @@ namespace shapes {
 		HRESULT hr = CoCreateInstance(__uuidof(CHostDrv), NULL, CLSCTX_INPROC,
 				__uuidof(IHostDrv), (LPVOID *) &pIHostDrv);
 		if (hr == REGDB_E_CLASSNOTREG) {
-			// printf("The CHostDrv class is not registered.\n");
-			// printf("Use regsvr32.exe to register CIUsbLib.dll\n");
 			throw std::invalid_argument("The CHostDrv class is not registered");
 		}
 		else if (FAILED(hr)) {
-			throw std::invalid_argument("Error (0x%08x) creating CHostDrv object");
+			throw std::invalid_argument("Error creating CHostDrv object");
+		}
+	}
+
+	CCIUsb::~CCIUsb() { }
+
+	int CCIUsb::open(int skip) {
+		long lCurDev = -1;
+		long lStatus = 0;
+		HRESULT hr;
+
+		if (mydevice != -1) {
+			throw std::invalid_argument("Device already opened");
 		}
 
 		/*
@@ -50,8 +50,9 @@ namespace shapes {
 		long lDevices[MAX_USB_DEVICES] = {-1};
 		hr = pIHostDrv->CIUsb_GetAvailableDevices(lDevices,
 				sizeof(lDevices)/sizeof(long), &lStatus);
-		if FAILED(hr)
+		if FAILED(hr) {
 			throw std::invalid_argument("Failure to get available USB devices");
+		}
 
 		for (int i = 0; i < MAX_USB_DEVICES; i++)
 		{
@@ -59,9 +60,10 @@ namespace shapes {
 				char cDevName[4096] = {0};
 				hr = pIHostDrv->CIUsb_GetStatus(
 						i, CIUsb_STATUS_DEVICENAME, (long *) cDevName);
-				if FAILED(hr)
+				if FAILED(hr) {
 					throw std::invalid_argument(
 							"Failure to get available USB device name");
+				}
 
 				bool fFoundMulti = (strstr(cDevName, USB_DEVNAME) != NULL);
 				// printf("%s", cDevName);
@@ -85,26 +87,69 @@ namespace shapes {
 		// reset the hardware: control signal FRESET is active low
 		hr = pIHostDrv->CIUsb_SetControl(lCurDev,
 				CIUsb_CONTROL_DEASSERT_FRESET, &lStatus);
-		if FAILED(hr)
+		if FAILED(hr) {
 			throw std::invalid_argument(
 					"Failure to deassert MULTI hardware reset control");
+		}
 
 		hr = pIHostDrv->CIUsb_SetControl(lCurDev,
 				CIUsb_CONTROL_ASSERT_FRESET,   &lStatus);
-		if FAILED(hr)
+		if FAILED(hr) {
 			throw std::invalid_argument(
 					"Failure to assert MULTI hardware reset control");
+		}
 
 		// assert high voltage enable
 		hr = pIHostDrv->CIUsb_SetControl(lCurDev,
 				CIUsb_CONTROL_ASSERT_HV_ENAB,  &lStatus);
-		if FAILED(hr)
+		if FAILED(hr) {
 			throw std::invalid_argument(
 					"Failure to enable MULTI hardware high voltage enable");
+		}
 
 		mydevice = lCurDev;
 
 		return 0;
+	}
+
+	int CCIUsb::get_devices() {
+		int ndevices = 0;
+		long lCurDev = -1;
+		long lStatus = 0;
+		HRESULT hr;
+
+		/*
+		 * Check for USB devices supported by the CIUsbLib The array lDevices is
+		 * set by CIUsb_GetAvailableDevices to indicate which devices are present
+		 * in the system In order to recognize MULTI DM devices, {CiGenUSB.sys,
+		 * CiGenUSB.inf} need to be installed properly
+		 */
+		long lDevices[MAX_USB_DEVICES] = {-1};
+		hr = pIHostDrv->CIUsb_GetAvailableDevices(lDevices,
+				sizeof(lDevices)/sizeof(long), &lStatus);
+		if FAILED(hr) {
+			throw std::invalid_argument("Failure to get available USB devices");
+		}
+
+		for (int i = 0; i < MAX_USB_DEVICES; i++)
+		{
+			if (lDevices[i] != -1) {
+				char cDevName[4096] = {0};
+				hr = pIHostDrv->CIUsb_GetStatus(
+						i, CIUsb_STATUS_DEVICENAME, (long *) cDevName);
+				if FAILED(hr) {
+					throw std::invalid_argument(
+							"Failure to get available USB device name");
+				}
+
+				bool fFoundMulti = (strstr(cDevName, USB_DEVNAME) != NULL);
+				if (fFoundMulti) {
+					ndevices++;
+				}
+			}
+		}
+
+		return ndevices;
 	}
 
 	void CCIUsb::write(unsigned short *values, int vsize) {
@@ -141,16 +186,15 @@ namespace shapes {
 
 		hr = pIHostDrv->CIUsb_StepFrameData(mydevice, (unsigned char *)sMapData,
 				NUM_ACTUATORS*sizeof(short), &lStatus);
-		if FAILED(hr)
+		if FAILED(hr) {
 			throw std::invalid_argument("Failure to send MULTI frame data");
+		}
 
 		if (lStatus == H_DEVICE_NOT_FOUND) {
-			printf("Framing error: device not found");
 			throw std::invalid_argument("Framing error: device not found");
 		}
 		else {
 			if (lStatus == H_DEVICE_TIMEOUT) {
-				printf("Framing error: device timeout");
 				throw std::invalid_argument("Framing error: device timeout");
 			}
 		}
@@ -171,36 +215,40 @@ namespace shapes {
 
 		hr = pIHostDrv->CIUsb_StepFrameData(mydevice, (unsigned char *)
 				sMapData, NUM_ACTUATORS*sizeof(short), &lStatus);
-		if FAILED(hr)
+		if FAILED(hr) {
 			throw std::invalid_argument("Failure to send MULTI frame data");
+		}
 
 		// deassert high voltage enable
 		hr = pIHostDrv->CIUsb_SetControl(mydevice,
 				CIUsb_CONTROL_DEASSERT_HV_ENAB,  &lStatus);
-		if FAILED(hr)
+		if FAILED(hr) {
 			throw std::invalid_argument(
 					"Failure to enable MULTI hardware high voltage enable");
+		}
 
 		// reset the hardware: control signal FRESET is active low
 		hr = pIHostDrv->CIUsb_SetControl(mydevice,
 				CIUsb_CONTROL_DEASSERT_FRESET, &lStatus);
-		if FAILED(hr)
+		if FAILED(hr) {
 			throw std::invalid_argument(
 					"Failure to deassert MULTI hardware reset control");
+		}
 		hr = pIHostDrv->CIUsb_SetControl(mydevice,
 				CIUsb_CONTROL_ASSERT_FRESET,   &lStatus);
-		if FAILED(hr)
+		if FAILED(hr) {
 			throw std::invalid_argument(
 					"Failure to assert MULTI hardware reset control");
+		}
 
 		/*
 		hr = pIHostDrv->Release();
-		if FAILED(hr)
+		if FAILED(hr) {
 			throw std::invalid_argument("Failed release");
+		}
 		*/
 
 		mydevice = -1;
-		pIHostDrv = NULL;
 
 		// CoUninitialize(NULL);
 	}
