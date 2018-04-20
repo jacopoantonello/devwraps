@@ -64,7 +64,8 @@ namespace shapes {
 							"Failure to get available USB device name");
 
 				bool fFoundMulti = (strstr(cDevName, USB_DEVNAME) != NULL);
-				printf("%s", cDevName);
+				// printf("%s", cDevName);
+				// Cambridge Innovations Multi DM Driver USB Device
 				if (fFoundMulti) {
 					if (skip) {
 						skip--;

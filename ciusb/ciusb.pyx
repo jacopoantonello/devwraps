@@ -161,10 +161,10 @@ cdef class CIUsb:
         return u
 
     def get_transform(self):
-        return None
+        return 'v = u'
 
     def get_serial_number(self):
         if self.opened:
-            return self.serial_number
+            return str(self.skip)
         else:
             return None

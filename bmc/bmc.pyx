@@ -58,12 +58,6 @@ cdef class BMC:
 
         self.opened = 1
 
-    def get_serial_number(self):
-        if self.opened:
-            return self.serial_number
-        else:
-            return None
-
     def close(self):
         cdef BMCRC rv
 
@@ -85,7 +79,7 @@ cdef class BMC:
         if self.opened:
             return self.dm.ActCount
         else:
-            raise Exception('Dm not opened')
+            raise Exception('dm not opened')
 
     def write(self, np.ndarray[double, ndim=1, mode='c'] array not None):
         """Write actuators.
@@ -174,10 +168,10 @@ cdef class BMC:
         return u
 
     def get_transform(self):
-        return None
+        return 'v = u'
 
     def get_serial_number(self):
         if self.opened:
-            return self.serial_number
+            return self.serial_number.decode('utf-8')
         else:
             return None
