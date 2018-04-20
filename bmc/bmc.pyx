@@ -11,8 +11,12 @@ date: Mon Feb 26 07:32:24 GMT 2018
 """
 
 import numpy as np
+import os
+
 cimport numpy as np
 
+from os import path
+from glob import glob
 from libc.string cimport memset, memcpy
 from cbmc cimport BMCRC, DM, BMCOpen, BMCClearArray, BMCClose
 from cbmc cimport BMCErrorString, BMCSetArray
@@ -32,16 +36,42 @@ cdef class BMC:
         memset(self.serial_number, 0, 12)
         self.opened = 0
 
-    def open(self, str serial_number):
+    def get_devices(self, dpath=None, pat='C17'):
+        if dpath is None:
+            dpath = path.join(
+                os.environ['PROGRAMFILES'], r'Boston Micromachines\Profiles')
+        l = [
+                path.basename(p).rstrip('.dm') for p in
+                glob(path.join(dpath, '*.dm'))]
+        return [p for p in l if p.startswith(pat)]
+
+    def open(self, dev=None):
         cdef BMCRC rv
         cdef char *cp
         cdef unsigned int i
         pystr = None
 
-        if type(serial_number) != str or len(serial_number) != 11:
-            raise Exception('Use a valid 11 character serial number.')
+        if self.opened and dev is not None:
+            # already opened but a name or id was specified
+            raise Exception('dm already opened')
+        elif self.opened:
+            # open has been called twice, keep quiet
+            return
 
-        pystr = serial_number.encode('utf-8')
+        if dev is None:
+            dev = 0
+
+        if type(dev) == int:
+            devs = self.get_devices()
+            if dev >= len(devs):
+                raise Exception('dm not found')
+            else:
+                dev = devs[dev]
+
+        if type(dev) != str or len(dev) != 11:
+            raise Exception(dev + ' is not an 11 character serial number')
+
+        pystr = dev.encode('utf-8')
         cp = pystr
         memcpy(self.serial_number, cp, 11)
         self.serial_number[11] = 0
