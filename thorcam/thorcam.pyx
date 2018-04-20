@@ -169,6 +169,37 @@ cdef class ThorCam:
                 raise Exception('Failure in is_GetCameraList')
 
             for i in range(clist.dwCount):
+                retlist.append(clist.uci[i].SerNo.decode('utf-8'))
+
+            free(clist)
+            return retlist
+
+    def get_camera_list(self):
+        cdef int ret
+        cdef int num
+        cdef UC480_CAMERA_LIST *clist
+        cdef list retlist = []
+        cdef list tmplist
+
+        ret = is_GetNumberOfCameras(&num)
+        if ret != IS_SUCCESS:
+            raise Exception('Failure in is_GetNumberOfCameras camera_list')
+
+        if num <= 0:
+            return []
+        else:
+            clist = <UC480_CAMERA_LIST *>malloc(
+                sizeof(unsigned long) + num*sizeof(UC480_CAMERA_INFO))
+            if clist == NULL:
+                raise MemoryError('get_devices')
+
+            clist.dwCount = num
+            ret = is_GetCameraList(clist)
+            if ret != IS_SUCCESS:
+                free(clist)
+                raise Exception('Failure in is_GetCameraList')
+
+            for i in range(clist.dwCount):
                 tmplist = []
                 tmplist.append(clist.uci[i].dwCameraID)
                 tmplist.append(clist.uci[i].dwDeviceID)
