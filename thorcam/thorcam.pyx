@@ -61,7 +61,7 @@ DEF DEBUG = 0
 # https://github.com/BackupGGCode/pyueye/
 
 cdef class BufWrap:
-    cdef void* data
+    cdef uintptr_t data
     cdef np.npy_intp shape[2]
     cdef int memid
 
@@ -79,28 +79,27 @@ cdef class BufWrap:
             Pointer to the data
 
         """
-        self.data = data
+        self.data = <uintptr_t>data
         self.shape[0] = size0
         self.shape[1] = size1
         self.memid = memid
 
         if DEBUG:
-            print('BufWrap SET data {:x} memid {:d}'.format(
-                <unsigned long>data, memid))
+            print('BufWrap SET data {:x} memid {:d}'.format(data, memid))
 
     def __array__(self):
         ndarray = np.PyArray_SimpleNewFromData(
-            2, self.shape, np.NPY_UINT8, self.data)
+            2, self.shape, np.NPY_UINT8, <void *>self.data)
         return ndarray
 
     def __dealloc__(self):
         if DEBUG:
             print('BufWrap FREE data {:x} memid {:d}'.format(
-                <unsigned long>self.data, self.memid))
+                self.data, self.memid))
         free(<void*>self.data)
 
     def get_data(self):
-        return <uintptr_t>self.data
+        return self.data
 
     def get_memid(self):
         return self.memid
@@ -191,7 +190,7 @@ cdef class ThorCam:
             clist = <UC480_CAMERA_LIST *>malloc(
                 sizeof(unsigned long) + num*sizeof(UC480_CAMERA_INFO))
             if clist == NULL:
-                raise MemoryError('get_devices')
+                raise MemoryError('get_camera_list')
 
             clist.dwCount = num
             ret = is_GetCameraList(clist)
@@ -619,11 +618,11 @@ cdef class ThorCam:
         Parameters
         ----------
         - `wait`: timeout in milliseconds
-        
+
         Returns
         -------
         - `img`: `numpy` image
-        
+
         """
 
         cdef int ret
