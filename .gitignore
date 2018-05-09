@@ -3,4 +3,5 @@ build/
 bmc/bmc.c
 thorcam/thorcam.c
 ciusb/ciusb.cpp
+sdk3/sdk3.c
 *.pyd

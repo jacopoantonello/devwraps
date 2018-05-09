@@ -300,6 +300,32 @@ cdef class SDK3:
         assert(self.handle != AT_HANDLE_UNINITIALISED)
         self._init_bufs()
 
+    def get_devices(self, what=None):
+        cdef list retlist = []
+        cdef int ret1
+        cdef int ret2
+        cdef at64 num
+        cdef int i
+        cdef ath hand2
+        cdef atwc sn[STRLEN]
+
+        if self.check_opened():
+            raise NotImplementedError()
+        else:
+            check_return(AT_GetInt(AT_HANDLE_SYSTEM, 'DeviceCount', &num))
+            hand2 = AT_HANDLE_UNINITIALISED
+            for i in range(num):
+                ret1 = AT_Open(i, &hand2)
+                if ret1 == AT_SUCCESS:
+                    ret2 = AT_GetString(hand2, 'SerialNumber', sn, STRLEN)
+                    if ret2 == AT_SUCCESS:
+                        retlist.append(sn)
+                    else:
+                        ret2 = AT_Close(hand2)
+                        raise Exception('Cannot read serial number')
+                    ret2 = AT_Close(hand2)
+            return retlist
+
     cdef void _init_bufs(self, nbufs=10):
         cdef at64 imsize
         cdef at64 stride
