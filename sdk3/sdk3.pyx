@@ -44,6 +44,9 @@ from csdk3 cimport (
 
 np.import_array()
 
+cdef extern from "numpy/ndarraytypes.h":
+    int NPY_ARRAY_CARRAY
+
 DEF STRLEN = 256
 DEF DEBUG = 1
 
@@ -147,8 +150,8 @@ cdef str error_string(int e):
 
 cdef class BufWrap:
     cdef np.npy_intp shape[2]
+    cdef np.npy_intp strides[2]
     cdef int imsize
-    cdef int stride
     cdef int dtype
     cdef uintptr_t ptr
     cdef uintptr_t data
@@ -161,28 +164,35 @@ cdef class BufWrap:
         self.imsize = imsize
         self.shape[0] = height
         self.shape[1] = width
-        self.stride = stride
+        self.strides[0] = stride
+        self.strides[1] = 0
         self.dtype = dtype
 
         self.ptr = <uintptr_t>malloc(imsize + 7)
-        if not self.data:
+        if not self.ptr:
             raise MemoryError('cannot allocate buffer')
         # https://stackoverflow.com/questions/227897
         self.data = ((self.ptr + 7) & notpmask)
         assert((self.data & pmask) == 0)
 
         if DEBUG:
-            print('BufWrap INIT data {:x}'.format(<unsigned long>self.data))
+            print('BufWrap INIT ptr 0x{:x} data 0x{:x}'.format(
+                self.ptr, self.data))
 
     def __array__(self):
-        ndarray = np.PyArray_SimpleNewFromData(
-            2, self.shape, self.dtype, <void*>self.data)
+        # #define PyArray_SimpleNewFromData(nd, dims, typenum, data) \
+        # PyArray_New(&PyArray_Type, nd, dims, typenum, NULL, \
+        # data, 0, NPY_ARRAY_CARRAY, NULL)
+        ndarray = np.PyArray_New(
+            np.ndarray, 2, self.shape, self.dtype, self.strides,
+            <void*>self.data, 0, NPY_ARRAY_CARRAY, 0)
         return ndarray
 
     def __dealloc__(self):
         if DEBUG:
-            print('BufWrap FREE data {:x}'.format(<unsigned long>self.data))
-        free(<void*>self.data)
+            print('BufWrap FREE ptr 0x{:x} data 0x{:x}'.format(
+                self.ptr, self.data))
+        free(<void*>self.ptr)
 
     def get_data(self):
         return self.data
@@ -273,7 +283,11 @@ cdef class SDK3:
 
         if type(what) is int:
             index = what
-            check_return(AT_Open(index, &self.handle))
+            check_return(AT_GetInt(AT_HANDLE_SYSTEM, 'DeviceCount', &num))
+            if index >= num:
+                raise Exception('Camera {:d} not found'.format(index))
+            else:
+                check_return(AT_Open(index, &self.handle))
         elif type(what) is str:
             check_return(AT_GetInt(AT_HANDLE_SYSTEM, 'DeviceCount', &num))
             self.handle = AT_HANDLE_UNINITIALISED
@@ -356,9 +370,6 @@ cdef class SDK3:
         self.check_read(set_stride)
         check_return(AT_GetInt(self.handle, set_stride, &stride))
 
-        if stride != width:
-            raise NotImplementedError('stride != width')
-
         self.check_read(set_enc)
         check_return(AT_GetEnumIndex(self.handle, set_enc, &tmp))
         check_return(
@@ -370,7 +381,7 @@ cdef class SDK3:
             dtype = np.NPY_UINT16
         else:
             raise NotImplementedError(
-                'encoding must be Mono8, Mono12, or Mono16')
+                'encoding must be Mono8, Mono12, or Mono16, not ' + strbuf)
 
         check_return(AT_Flush(self.handle))
         self.bufwraps.clear()
