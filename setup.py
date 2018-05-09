@@ -92,11 +92,26 @@ def make_thorcam(fillout, remove):
     remove.append(patched)
 
 
+def make_sdk3(fillout, remove):
+    dir1 = path.join(PROGFILES, r'Andor SDK3')
+
+    if not path.isdir(dir1):
+        return
+
+    fillout.append(Extension(
+        'sdk3', [r'sdk3\sdk3.pyx'],
+        include_dirs=['sdk3', numpy.get_include(), dir1],
+        library_dirs=[dir1],
+        libraries=['atcorem'],
+    ))
+
+
 exts = []
 remove = []
 make_ciusb(exts, remove)
 make_bmc(exts, remove)
 make_thorcam(exts, remove)
+make_sdk3(exts, remove)
 print('exts', exts)
 
 setup(ext_modules=cythonize(exts, compiler_directives={'language_level': 3}),)
