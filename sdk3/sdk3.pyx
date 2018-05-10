@@ -48,7 +48,7 @@ cdef extern from "numpy/ndarraytypes.h":
     int NPY_ARRAY_CARRAY_RO
 
 DEF STRLEN = 256
-DEF DEBUG = 1
+DEF DEBUG = 0
 
 
 ctypedef int ath
@@ -1168,6 +1168,64 @@ cdef class SDK3:
 
     def set_trigger_mode(self, str1):
         cdef atwc *setting = 'TriggerMode'
+        cdef list ret = []
+        cdef int i
+        cdef int count
+        cdef atwc name[STRLEN]
+
+        if self.check_opened():
+            self.check_read(setting)
+            self.check_write(setting)
+            check_return(AT_GetEnumCount(self.handle, setting, &count))
+            for i in range(count):
+                check_return(AT_GetEnumStringByIndex(
+                    self.handle, setting, i, name, STRLEN))
+                if name == str1:
+                    check_return(AT_SetEnumIndex(self.handle, setting, i))
+                    return
+            raise ValueError('Illegal parameter')
+
+    def get_fan_speed_range(self, available=False):
+        cdef atwc *setting = 'FanSpeed'
+        cdef int i
+        cdef int count
+        cdef list ret = []
+        cdef atwc name[STRLEN]
+        cdef atbool impl
+
+        if self.check_opened():
+            self.check_read(setting)
+            check_return(AT_GetEnumCount(self.handle, setting, &count))
+            for i in range(count):
+                check_return(AT_GetEnumStringByIndex(
+                    self.handle, setting, i, name, STRLEN))
+                if available:
+                    check_return(AT_IsEnumIndexAvailable(
+                        self.handle, setting, i, &impl))
+                    if impl:
+                        ret.append(str(name))
+                else:
+                    ret.append(str(name))
+            return ret
+        else:
+            return ret
+
+    def get_fan_speed(self):
+        cdef atwc *setting = 'FanSpeed'
+        cdef atwc name[STRLEN]
+        cdef int i
+
+        if self.check_opened():
+            self.check_read(setting)
+            check_return(AT_GetEnumIndex(self.handle, setting, &i))
+            check_return(
+                AT_GetEnumStringByIndex(self.handle, setting, i, name, STRLEN))
+            return name
+        else:
+            return None
+
+    def set_fan_speed(self, str1):
+        cdef atwc *setting = 'FanSpeed'
         cdef list ret = []
         cdef int i
         cdef int count
