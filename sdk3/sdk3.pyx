@@ -176,8 +176,8 @@ cdef class BufWrap:
         assert((self.data & pmask) == 0)
 
         if DEBUG:
-            print('BufWrap INIT ptr 0x{:x} data 0x{:x}'.format(
-                self.ptr, self.data))
+            print('BufWrap INIT ptr 0x{:x} data 0x{:x} imsize {:d}'.format(
+                self.ptr, self.data, self.imsize))
 
     def __array__(self):
         # #define PyArray_SimpleNewFromData(nd, dims, typenum, data) \
@@ -190,8 +190,8 @@ cdef class BufWrap:
 
     def __dealloc__(self):
         if DEBUG:
-            print('BufWrap FREE ptr 0x{:x} data 0x{:x}'.format(
-                self.ptr, self.data))
+            print('BufWrap FREE ptr 0x{:x} data 0x{:x} imsize {:d}'.format(
+                self.ptr, self.data, self.imsize))
         free(<void*>self.ptr)
 
     def get_data(self):
@@ -340,7 +340,7 @@ cdef class SDK3:
                     ret2 = AT_Close(hand2)
             return retlist
 
-    cdef void _init_bufs(self, nbufs=10):
+    cdef void _init_bufs(self, nbufs=10, encoding=None):
         cdef at64 imsize
         cdef at64 stride
         cdef at64 width
@@ -351,15 +351,59 @@ cdef class SDK3:
         cdef atwc *set_height = 'AOIHeight'
         cdef atwc *set_stride = 'AOIStride'
         cdef atwc *set_enc = 'PixelEncoding'
-        cdef atwc strbuf[STRLEN]
         cdef int tmp
         cdef uintptr_t dataptr
+        cdef int count
+        cdef at64 encoding_handled
+        cdef int i
+        cdef atwc name[STRLEN]
 
         if not self.check_opened():
             return
 
         if nbufs < 2:
             nbufs = 2
+
+        pix_enc_ranges = self.get_pixel_encoding_range(True)
+        if encoding is None:
+            if 'Mono32' in pix_enc_ranges:
+                encoding = 'Mono32'
+                dtype = np.NPY_UINT32
+            elif 'Mono16' in pix_enc_ranges:
+                encoding = 'Mono16'
+                dtype = np.NPY_UINT16
+            elif 'Mono12' in pix_enc_ranges:
+                encoding = 'Mono12'
+                dtype = np.NPY_UINT16
+            elif 'Mono8' in pix_enc_ranges:
+                encoding = 'Mono8'
+                dtype = np.NPY_UINT8
+            else:
+                self.close()
+                raise NotImplementedError(
+                    'encoding must be Mono8, Mono12, or Mono16')
+        else:
+            if encoding not in ('Mono8', 'Mono12', 'Mono16'):
+                self.close()
+                raise NotImplementedError(
+                    'encoding must be Mono8, Mono12, or Mono16')
+            elif encoding not in pix_enc_ranges:
+                self.close()
+                raise NotImplementedError(
+                    'encoding ' + encoding + ' not supported')
+        self.check_write(set_enc)
+        check_return(AT_GetEnumCount(self.handle, set_enc, &count))
+        encoding_handled = 0
+        for i in range(count):
+            check_return(AT_GetEnumStringByIndex(
+                self.handle, set_enc, i, name, STRLEN))
+            if name == encoding:
+                check_return(AT_SetEnumIndex(self.handle, set_enc, i))
+                encoding_handled = 1
+                break
+        if encoding_handled != 1:
+            self.close()
+            raise ValueError('failed to set pixel encoding')
 
         self.check_read(set_imsize)
         check_return(AT_GetInt(self.handle, set_imsize, &imsize))
@@ -369,19 +413,6 @@ cdef class SDK3:
         check_return(AT_GetInt(self.handle, set_height, &height))
         self.check_read(set_stride)
         check_return(AT_GetInt(self.handle, set_stride, &stride))
-
-        self.check_read(set_enc)
-        check_return(AT_GetEnumIndex(self.handle, set_enc, &tmp))
-        check_return(
-            AT_GetEnumStringByIndex(self.handle, set_enc, tmp, strbuf, STRLEN))
-
-        if strbuf == 'Mono8':
-            dtype = np.NPY_UINT8
-        elif strbuf in ('Mono12', 'Mono16'):
-            dtype = np.NPY_UINT16
-        else:
-            raise NotImplementedError(
-                'encoding must be Mono8, Mono12, or Mono16, not ' + strbuf)
 
         check_return(AT_Flush(self.handle))
         self.bufwraps.clear()
@@ -950,6 +981,7 @@ cdef class SDK3:
                     self.handle, setting, i, name, STRLEN))
                 if name == str1:
                     check_return(AT_SetEnumIndex(self.handle, setting, i))
+                    self._init_bufs(nbufs=len(self.bufwraps), encoding=name)
                     return
             raise ValueError('Illegal parameter')
 
