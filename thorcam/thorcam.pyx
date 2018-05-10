@@ -55,6 +55,9 @@ from cthorcam cimport (
 
 np.import_array()
 
+cdef extern from "numpy/ndarraytypes.h":
+    int NPY_ARRAY_CARRAY_RO
+
 DEF DEBUG = 0
 
 # https://gist.github.com/GaelVaroquaux/1249305
@@ -63,6 +66,7 @@ DEF DEBUG = 0
 cdef class BufWrap:
     cdef uintptr_t data
     cdef np.npy_intp shape[2]
+    cdef np.npy_intp strides[2]
     cdef int memid
 
     cdef set_data(self, int size0, int size1, char* data, int memid):
@@ -82,14 +86,17 @@ cdef class BufWrap:
         self.data = <uintptr_t>data
         self.shape[0] = size0
         self.shape[1] = size1
+        self.strides[0] = size1
+        self.strides[1] = 1
         self.memid = memid
 
         if DEBUG:
             print('BufWrap SET data {:x} memid {:d}'.format(data, memid))
 
     def __array__(self):
-        ndarray = np.PyArray_SimpleNewFromData(
-            2, self.shape, np.NPY_UINT8, <void *>self.data)
+        ndarray = np.PyArray_New(
+            np.ndarray, 2, self.shape, np.NPY_UINT8, self.strides,
+            <void*>self.data, 0, NPY_ARRAY_CARRAY_RO, 0)
         return ndarray
 
     def __dealloc__(self):
