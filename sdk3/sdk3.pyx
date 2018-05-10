@@ -45,7 +45,7 @@ from csdk3 cimport (
 np.import_array()
 
 cdef extern from "numpy/ndarraytypes.h":
-    int NPY_ARRAY_CARRAY
+    int NPY_ARRAY_CARRAY_RO
 
 DEF STRLEN = 256
 DEF DEBUG = 1
@@ -164,8 +164,17 @@ cdef class BufWrap:
         self.imsize = imsize
         self.shape[0] = height
         self.shape[1] = width
+
+        if dtype == np.NPY_UINT8:
+            self.strides[1] = 1
+        elif dtype == np.NPY_UINT16:
+            self.strides[1] = 2
+        elif dtype == np.NPY_UINT32:
+            self.strides[1] = 4
+        else:
+            raise NotImplementedError('unknown dtype')
+
         self.strides[0] = stride
-        self.strides[1] = 0
         self.dtype = dtype
 
         self.ptr = <uintptr_t>malloc(imsize + 7)
@@ -176,8 +185,11 @@ cdef class BufWrap:
         assert((self.data & pmask) == 0)
 
         if DEBUG:
-            print('BufWrap INIT ptr 0x{:x} data 0x{:x} imsize {:d}'.format(
-                self.ptr, self.data, self.imsize))
+            print((
+                'BufWrap INIT ptr 0x{:x} data 0x{:x} imsize {:d} ' +
+                'strides {:d} {:d}').format(
+                    self.ptr, self.data, self.imsize,
+                    self.strides[0], self.strides[1]))
 
     def __array__(self):
         # #define PyArray_SimpleNewFromData(nd, dims, typenum, data) \
@@ -185,13 +197,16 @@ cdef class BufWrap:
         # data, 0, NPY_ARRAY_CARRAY, NULL)
         ndarray = np.PyArray_New(
             np.ndarray, 2, self.shape, self.dtype, self.strides,
-            <void*>self.data, 0, NPY_ARRAY_CARRAY, 0)
+            <void*>self.data, 0, NPY_ARRAY_CARRAY_RO, 0)
         return ndarray
 
     def __dealloc__(self):
         if DEBUG:
-            print('BufWrap FREE ptr 0x{:x} data 0x{:x} imsize {:d}'.format(
-                self.ptr, self.data, self.imsize))
+            print((
+                'BufWrap FREE ptr 0x{:x} data 0x{:x} imsize {:d} ' +
+                'strides {:d} {:d}').format(
+                    self.ptr, self.data, self.imsize,
+                    self.strides[0], self.strides[1]))
         free(<void*>self.ptr)
 
     def get_data(self):
