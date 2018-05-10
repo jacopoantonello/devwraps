@@ -366,18 +366,18 @@ cdef class SDK3:
 
         pix_enc_ranges = self.get_pixel_encoding_range(True)
         if encoding is None:
-            if 'Mono32' in pix_enc_ranges:
-                encoding = 'Mono32'
-                dtype = np.NPY_UINT32
+            if 'Mono12' in pix_enc_ranges:
+                encoding = 'Mono12'
+                dtype = np.NPY_UINT16
             elif 'Mono16' in pix_enc_ranges:
                 encoding = 'Mono16'
-                dtype = np.NPY_UINT16
-            elif 'Mono12' in pix_enc_ranges:
-                encoding = 'Mono12'
                 dtype = np.NPY_UINT16
             elif 'Mono8' in pix_enc_ranges:
                 encoding = 'Mono8'
                 dtype = np.NPY_UINT8
+            elif 'Mono32' in pix_enc_ranges:
+                encoding = 'Mono32'
+                dtype = np.NPY_UINT32
             else:
                 self.close()
                 raise NotImplementedError(
@@ -466,9 +466,6 @@ cdef class SDK3:
 
         if not self.check_opened():
             return None
-
-        if wait < 0:
-            wait = -wait
 
         if self.lastSeqBuf >= 0:
             dataptr = self.bufwraps[self.lastSeqBuf].get_data()
@@ -1187,6 +1184,8 @@ cdef class SDK3:
                 return np.uint8
             elif name in ('Mono12', 'Mono12Packed',  'Mono16'):
                 return np.uint16
+            elif name in ('Mono32'):
+                return np.uint32
             else:
                 return NotImplementedError(name)
 
@@ -1209,6 +1208,8 @@ cdef class SDK3:
                 return 2**12 - 1
             elif name in 'Mono16':
                 return 0xffff
+            elif name in 'Mono32':
+                return 0xffffff
             else:
                 return NotImplementedError(name)
 
