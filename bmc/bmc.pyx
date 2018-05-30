@@ -111,7 +111,9 @@ cdef class BMC:
         else:
             raise Exception('dm not opened')
 
-    def write(self, np.ndarray[double, ndim=1, mode='c'] array not None):
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def write(self, np.ndarray[double, ndim=1] array not None):
         """Write actuators.
 
         This function writes raw voltage values to the DM driver. No conversion

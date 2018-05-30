@@ -65,7 +65,9 @@ cdef class CIUsb:
     def get_devices(self):
         return [str(i) for i in range(self.c_ciusb.get_devices())]
 
-    def write(self, np.ndarray[double, ndim=1, mode='c'] array1 not None):
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def write(self, np.ndarray[double, ndim=1] array1 not None):
         """Write actuators.
 
         This function writes raw voltage values to the DM driver. No conversion
