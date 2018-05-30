@@ -1,12 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-
-author: J. Antonello <jacopo.antonello@dpag.ox.ac.uk>
-date: Mon Feb 26 07:32:24 GMT 2018
+"""Wrapper for Thorlabs cameras
 
 """
+
+# devwraps - some device wrappers for Python
+# Copyright 2018 J. Antonello <jacopo.antonello@dpag.ox.ac.uk>
+#
+# This file is part of devwraps.
+#
+# devwraps is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# devwraps is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with devwraps.  If not, see <http://www.gnu.org/licenses/>.
+
 
 from libc.stddef cimport wchar_t
 
