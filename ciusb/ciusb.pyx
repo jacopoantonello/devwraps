@@ -11,6 +11,8 @@ date: Mon Feb 26 07:32:24 GMT 2018
 """
 
 import numpy as np
+
+cimport cython
 cimport numpy as np
 
 from libc.math cimport round
@@ -50,7 +52,7 @@ cdef class CIUsb:
             return
 
         if self.c_ciusb.get_devices() == 0:
-            raise Exception('no device found')
+            raise Exception('no devices found')
         elif dev is None:
             dev = 0
         elif type(dev) == str:

@@ -4,3 +4,5 @@ bmc/bmc.c
 thorcam/thorcam.c
 ciusb/ciusb.cpp
 *.pyd
+ciusb/_CIUsbLib.tlb
+thorcam/uc480.h
