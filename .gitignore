@@ -3,6 +3,7 @@ build/
 bmc/bmc.c
 thorcam/thorcam.c
 ciusb/ciusb.cpp
+sdk3/sdk3.c
 *.pyd
 ciusb/_CIUsbLib.tlb
 thorcam/uc480.h
