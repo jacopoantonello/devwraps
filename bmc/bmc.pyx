@@ -32,10 +32,12 @@ cdef class BMC:
     cdef char serial_number[12]
     cdef int opened
     cdef double *doubles
+    cdef object transform
 
     def __cinit__(self):
         memset(self.serial_number, 0, 12)
         self.opened = 0
+        self.transform = None
 
     def get_devices(self, dpath=None, pat='C17'):
         if dpath is None:
@@ -133,14 +135,19 @@ cdef class BMC:
         cdef unsigned int i
         cdef double val
 
+        if self.transform is not None:
+            array = self.transform(array)
+
         if not self.opened:
             raise Exception('DM not opened')
+        elif not isinstance(array, np.ndarray):
+            raise Exception('array must be numpy.ndarray')
         elif array.ndim != 1:
             raise Exception('array must be a vector')
         elif array.size != self.dm.ActCount:
-            raise Exception('wrong array size')
+            raise Exception('array.size must be ' + str(self.dm.ActCount))
         elif array.dtype != np.float64:
-            raise Exception('wrong data type')
+            raise Exception('array.dtype must be np.float64')
         # TODO check if aligned
 
         for i in range(self.dm.ActCount):
@@ -212,7 +219,10 @@ cdef class BMC:
         return u
 
     def get_transform(self):
-        return 'v = u'
+        return self.transform
+
+    def set_transform(self, tx):
+        self.transform = tx
 
     def get_serial_number(self):
         if self.opened:

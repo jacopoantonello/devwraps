@@ -37,11 +37,13 @@ cdef class CIUsb:
     cdef unsigned short array2[160]
     cdef int opened
     cdef int dev
+    cdef object transform
 
     def __cinit__(self):
         self.c_ciusb = CCIUsb()
         self.opened = 0
         self.dev = -1
+        self.transform = None
 
     def open(self, dev=None):
         if self.opened and dev is not None:
@@ -69,7 +71,7 @@ cdef class CIUsb:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def write(self, np.ndarray[double, ndim=1] array1 not None):
+    def write(self, np.ndarray[double, ndim=1] array not None):
         """Write actuators.
 
         This function writes raw voltage values to the DM driver. No conversion
@@ -88,27 +90,33 @@ cdef class CIUsb:
         cdef double db
         cdef int i
 
+        if self.transform is not None:
+            array = self.transform(array)
+
         if not self.opened:
-            raise Exception('device is not opened')
-        elif array1.ndim != 1:
+            raise Exception('DM is not opened')
+        elif not isinstance(array, np.ndarray):
+            raise Exception('array must be numpy.ndarray')
+        elif array.ndim != 1:
             raise Exception('array must be a vector')
-        elif array1.dtype != np.float64:
-            raise Exception('wrong data type')
-        elif array1.size != 140:
-            raise Exception('array1 must be a vector of 140 elements')
+        elif array.size != self.c_ciusb.size():
+            raise Exception('array.size must be ' + str(self.c_ciusb.size()))
+        elif array.dtype != np.float64:
+            raise Exception('array.dtype must be np.float64')
 
-        if norm(array1, np.inf) > 1.:
-            array1[array1 > 1.] == 1.
-            array1[array1 < -1.] == -1.
+        if norm(array, np.inf) > 1.:
+            array[array > 1.] == 1.
+            array[array < -1.] == -1.
 
-        assert(norm(array1, np.inf) <= 1.)
+        assert(norm(array, np.inf) <= 1.)
 
         for i in range(140):
-            db = round((array1[i] + 1.0)/2.0*0xffff)
+            db = round((array[i] + 1.0)/2.0*0xffff)
             if db < 0.0 or db > 0xffff:
                 raise Exception('write conversion error')
 
             self.array2[i] = <unsigned short>db
+
         self._write()
 
     def _write(self):
