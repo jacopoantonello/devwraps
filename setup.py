@@ -45,7 +45,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 PROGFILES = os.environ['PROGRAMFILES']
 
 
-def make_ciusb(fillout, remove):
+def make_ciusb(fillout, remove, pkgdata):
     dir1 = path.join(PROGFILES, r'Boston Micromachines\Usb\CIUsbLib')
     f1 = path.join(
         PROGFILES,
@@ -67,7 +67,7 @@ def make_ciusb(fillout, remove):
     remove.append(r'devwraps\ciusb.cpp')
 
 
-def make_bmc(fillout, remove):
+def make_bmc(fillout, remove, pkgdata):
     dir1 = path.join(PROGFILES, r'Boston Micromachines\Lib64')
     dir2 = path.join(PROGFILES, r'Boston Micromachines\Include')
 
@@ -83,8 +83,9 @@ def make_bmc(fillout, remove):
     remove.append(r'devwraps\bmc.c')
 
 
-def make_thorcam(fillout, remove):
+def make_thorcam(fillout, remove, pkgdata):
     p1 = r'Thorlabs\Scientific Imaging\DCx Camera Support\Develop'
+    p2 = r'Thorlabs\Scientific Imaging\ThorCam\uc480_64.dll'
     dir1 = path.join(PROGFILES, p1, r'Include')
     dir2 = path.join(PROGFILES, p1, r'Lib')
     pristine = path.join(dir1, 'uc480.h')
@@ -110,9 +111,10 @@ def make_thorcam(fillout, remove):
     ))
     remove.append(patched)
     remove.append(r'devwraps\thorcam.c')
+    pkgdata.append((r'lib\site-packages\devwraps', [path.join(PROGFILES, p2)]))
 
 
-def make_sdk3(fillout, remove):
+def make_sdk3(fillout, remove, pkgdata):
     dir1 = path.join(PROGFILES, r'Andor SDK3')
 
     if not path.isdir(dir1):
@@ -129,10 +131,11 @@ def make_sdk3(fillout, remove):
 
 exts = []
 remove = []
-make_ciusb(exts, remove)
-make_bmc(exts, remove)
-make_thorcam(exts, remove)
-make_sdk3(exts, remove)
+pkgdata = []
+make_ciusb(exts, remove, pkgdata)
+make_bmc(exts, remove, pkgdata)
+make_thorcam(exts, remove, pkgdata)
+make_sdk3(exts, remove, pkgdata)
 names = [e.name for e in exts]
 if len(names) == 0:
     raise ValueError('No drivers found')
@@ -158,7 +161,8 @@ setup(
     packages=['devwraps'],
     ext_modules=cythonize(exts, compiler_directives={'language_level': 3}),
     install_requires=['numpy', 'cython'],
-    zip_safe=False)
+    zip_safe=False,
+    data_files=pkgdata)
 
 try:
     for f in remove:

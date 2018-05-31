@@ -14,7 +14,8 @@ Compiling requirements
 Install
 -------
 
-    $ python setup.py install
+    $ python setup.py bdist_wheel
+    $ pip install dist\devwraps-0.1-cp36-cp36m-win_amd64.whl
 
 
 Develop
