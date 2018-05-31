@@ -33,8 +33,8 @@ import re
 
 from os import path
 from shutil import copyfile
-from distutils.core import setup
-from distutils.extension import Extension
+from setuptools import setup
+from setuptools.extension import Extension
 from Cython.Build import cythonize
 
 
@@ -50,21 +50,21 @@ def make_ciusb(fillout, remove):
     f1 = path.join(
         PROGFILES,
         r'Boston Micromachines\Usb\Examples\UsbExMulti\_CIUsbLib.tlb')
-    dst = path.join('ciusb', '_CIUsbLib.tlb')
+    dst = path.join(r'devwraps', '_CIUsbLib.tlb')
 
     if not path.isdir(dir1):
         return
 
     copyfile(f1, dst)
     fillout.append(Extension(
-        'ciusb', [r'ciusb\ciusb.pyx', r'ciusb\cciusb.cpp'],
-        include_dirs=['ciusb', numpy.get_include(), dir1],
+        'devwraps.ciusb', [r'devwraps\ciusb.pyx', r'devwraps\cciusb.cpp'],
+        include_dirs=[r'ciusb', numpy.get_include(), dir1],
         library_dirs=[dir1],
         libraries=['CIUsbLib'],
         language='c++',
     ))
     remove.append(dst)
-    remove.append(r'ciusb\ciusb.cpp')
+    remove.append(r'devwraps\ciusb.cpp')
 
 
 def make_bmc(fillout, remove):
@@ -75,12 +75,12 @@ def make_bmc(fillout, remove):
         return
 
     fillout.append(Extension(
-        'bmc', [r'bmc\bmc.pyx'],
-        include_dirs=['bmc', numpy.get_include(), dir2],
+        'devwraps.bmc', [r'devwraps\bmc.pyx'],
+        include_dirs=[r'devwraps', numpy.get_include(), dir2],
         library_dirs=[dir1],
         libraries=['BMC2'],
     ))
-    remove.append(r'bmc\bmc.c')
+    remove.append(r'devwraps\bmc.c')
 
 
 def make_thorcam(fillout, remove):
@@ -88,7 +88,7 @@ def make_thorcam(fillout, remove):
     dir1 = path.join(PROGFILES, p1, r'Include')
     dir2 = path.join(PROGFILES, p1, r'Lib')
     pristine = path.join(dir1, 'uc480.h')
-    patched = path.join('thorcam', 'uc480.h')
+    patched = path.join(r'devwraps', 'uc480.h')
 
     if not path.isdir(dir1) or not path.isdir(dir2):
         return
@@ -103,13 +103,13 @@ def make_thorcam(fillout, remove):
         f.write(incl)
 
     fillout.append(Extension(
-        'thorcam', [r'thorcam\thorcam.pyx'],
-        include_dirs=['thorcam', numpy.get_include()],
+        'devwraps.thorcam', [r'devwraps\thorcam.pyx'],
+        include_dirs=[r'devwraps', numpy.get_include()],
         library_dirs=[dir2],
         libraries=['uc480_64'],
     ))
     remove.append(patched)
-    remove.append(r'thorcam\thorcam.c')
+    remove.append(r'devwraps\thorcam.c')
 
 
 def make_sdk3(fillout, remove):
@@ -119,12 +119,12 @@ def make_sdk3(fillout, remove):
         return
 
     fillout.append(Extension(
-        'sdk3', [r'sdk3\sdk3.pyx'],
-        include_dirs=['sdk3', numpy.get_include(), dir1],
+        'devwraps.sdk3', [r'devwraps\sdk3.pyx'],
+        include_dirs=[r'devwraps', numpy.get_include(), dir1],
         library_dirs=[dir1],
         libraries=['atcorem'],
     ))
-    remove.append(r'sdk3\sdk3.c')
+    remove.append(r'devwraps\sdk3.c')
 
 
 exts = []
@@ -155,10 +155,10 @@ setup(
         'Programming Language :: Python :: 3',
         'Operating System :: Microsoft :: Windows'
     ],
-    packages=names,
-    exclude=['*.bat'],
+    packages=['devwraps'],
     ext_modules=cythonize(exts, compiler_directives={'language_level': 3}),
-    install_requires=['numpy', 'cython'])
+    install_requires=['numpy', 'cython'],
+    zip_safe=False)
 
 try:
     for f in remove:
@@ -166,4 +166,4 @@ try:
 except OSError:
     pass
 
-print('installed extensions are {}'.format(', '.join([])))
+print('installed extensions are {}'.format(', '.join(names)))

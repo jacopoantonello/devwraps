@@ -34,7 +34,7 @@ from libc.stddef cimport wchar_t
 from libc.stdlib cimport free, malloc
 from cpython cimport PyObject, Py_INCREF
 
-from cthorcam cimport (
+from .thorcamd cimport (
     IS_SUCCESS, is_GetNumberOfCameras, is_InitCamera, is_ExitCamera,
     is_GetCameraInfo, BOARDINFO, is_GetSensorInfo, SENSORINFO,
     is_EnableAutoExit, is_SetAllocatedImageMem, is_SetImageMem,
@@ -62,7 +62,7 @@ from cthorcam cimport (
     IS_CAP_STATUS_DEV_TIMEOUT, IS_CAP_STATUS_DEV_FRAME_CAPTURE_FAILED,
     IS_CAP_STATUS_ETH_BUFFER_OVERRUN, IS_CAP_STATUS_ETH_MISSED_IMAGES,
     UC480_CAPTURE_STATUS_INFO, is_CaptureStatus, UC480_CAMERA_LIST,
-    is_GetCameraList, UC480_CAMERA_INFO, IS_USE_DEVICE_ID )
+    is_GetCameraList, UC480_CAMERA_INFO, IS_USE_DEVICE_ID, WAIT_INFINITE)
 
 
 np.import_array()
@@ -631,7 +631,7 @@ cdef class ThorCam:
                 raise Exception('Failed is_StopLiveVideo')
             self.liveMode = 0
 
-    def grab_image(self, int wait=1000):
+    def grab_image(self, int wait=WAIT_INFINITE):
         """Acquire a single image.
 
         Parameters
@@ -650,12 +650,15 @@ cdef class ThorCam:
         cdef np.ndarray ndarray
         cdef uintptr_t uptr1
         cdef uintptr_t uptr2
+        cdef int wait2
 
         if self.phCam == 0:
             return None
 
-        if wait < 0:
-            wait = -wait
+        if wait <= 0:
+            wait2 = WAIT_INFINITE
+        else:
+            wait2 = wait
 
         assert(self.hEvent)
 
@@ -682,7 +685,7 @@ cdef class ThorCam:
             if ret != IS_SUCCESS:
                 raise Exception('Failed FreezeVideo {}'.format(str(ret)))
 
-        ret2 = WaitForSingleObject(self.hEvent, wait)
+        ret2 = WaitForSingleObject(self.hEvent, wait2)
         if ret2 == WAIT_TIMEOUT:
             raise Exception('WAIT_TIMEOUT')
         elif ret2 == WAIT_OBJECT_0:

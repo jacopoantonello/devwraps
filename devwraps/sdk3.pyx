@@ -34,7 +34,7 @@ from os import path
 from libc.stdint cimport uintptr_t
 from libc.stdlib cimport free, malloc
 from cpython cimport PyObject, Py_INCREF
-from csdk3 cimport (
+from .sdk3d cimport (
     AT_IsImplemented, AT_IsReadable, AT_IsWritable,
     AT_GetBool, AT_SetBool,
     AT_GetFloat, AT_SetFloat, AT_GetFloatMin, AT_GetFloatMax,

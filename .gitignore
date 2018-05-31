@@ -1,9 +1,9 @@
 .directory
 build/
-bmc/bmc.c
-thorcam/thorcam.c
-ciusb/ciusb.cpp
-sdk3/sdk3.c
+devwraps/bmc.c
+devwraps/thorcam.c
+devwraps/ciusb.cpp
+devwraps/sdk3.c
+devwraps.egg-info/
+dist/
 *.pyd
-ciusb/_CIUsbLib.tlb
-thorcam/uc480.h

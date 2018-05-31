@@ -35,8 +35,8 @@ cimport numpy as np
 from os import path
 from glob import glob
 from libc.string cimport memset, memcpy
-from cbmc cimport BMCRC, DM, BMCOpen, BMCClearArray, BMCClose
-from cbmc cimport BMCErrorString, BMCSetArray
+from .bmcd cimport BMCRC, DM, BMCOpen, BMCClearArray, BMCClose
+from .bmcd cimport BMCErrorString, BMCSetArray
 from libc.stdlib cimport malloc, free
 
 
