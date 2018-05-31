@@ -62,7 +62,7 @@ from .thorcamd cimport (
     IS_CAP_STATUS_DEV_TIMEOUT, IS_CAP_STATUS_DEV_FRAME_CAPTURE_FAILED,
     IS_CAP_STATUS_ETH_BUFFER_OVERRUN, IS_CAP_STATUS_ETH_MISSED_IMAGES,
     UC480_CAPTURE_STATUS_INFO, is_CaptureStatus, UC480_CAMERA_LIST,
-    is_GetCameraList, UC480_CAMERA_INFO, IS_USE_DEVICE_ID, WAIT_INFINITE)
+    is_GetCameraList, UC480_CAMERA_INFO, IS_USE_DEVICE_ID)
 
 
 np.import_array()
@@ -74,6 +74,8 @@ DEF DEBUG = 0
 
 # https://gist.github.com/GaelVaroquaux/1249305
 # https://github.com/BackupGGCode/pyueye/
+
+cdef int WAIT_INFINITE = 0xFFFFFFFF
 
 cdef class BufWrap:
     cdef uintptr_t data
@@ -685,6 +687,7 @@ cdef class ThorCam:
             if ret != IS_SUCCESS:
                 raise Exception('Failed FreezeVideo {}'.format(str(ret)))
 
+        # TODO fix error when using a too short timeout
         ret2 = WaitForSingleObject(self.hEvent, wait2)
         if ret2 == WAIT_TIMEOUT:
             raise Exception('WAIT_TIMEOUT')

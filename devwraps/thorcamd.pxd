@@ -233,7 +233,6 @@ cdef extern from "uc480.h":
 
     cdef unsigned long WAIT_TIMEOUT = 0x00000102
     cdef unsigned long WAIT_OBJECT_0 = 0x00000000
-    cdef int WAIT_INFINITE = 0xFFFFFFFF
 
     cdef unsigned long WaitForSingleObject(
         void *hHandle, unsigned long dwMilliseconds)
