@@ -86,7 +86,7 @@ cdef class CIUsb:
             self.dev = dev
 
     def get_devices(self):
-        return [str(i) for i in range(self.c_ciusb.get_devices())]
+        return ['dm' + str(i) for i in range(self.c_ciusb.get_devices())]
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
