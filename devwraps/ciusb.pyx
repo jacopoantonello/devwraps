@@ -230,6 +230,6 @@ cdef class CIUsb:
 
     def get_serial_number(self):
         if self.opened:
-            return str(self.dev)
+            return 'dm' + str(self.dev)
         else:
             return None
