@@ -35,6 +35,9 @@ from libc.math cimport round
 from numpy.linalg import norm
 
 
+DEF NUM_ACTUATORS = 140
+DEF NUM_DAC = 160
+
 np.import_array()
 
 
@@ -50,7 +53,7 @@ cdef extern from "cciusb.h" namespace "shapes":
 
 cdef class CIUsb:
     cdef CCIUsb c_ciusb
-    cdef unsigned short array2[160]
+    cdef unsigned short array2[NUM_DAC]
     cdef int opened
     cdef int dev
     cdef object transform
@@ -115,8 +118,8 @@ cdef class CIUsb:
             raise Exception('array must be numpy.ndarray')
         elif array.ndim != 1:
             raise Exception('array must be a vector')
-        elif array.size != self.c_ciusb.size():
-            raise Exception('array.size must be ' + str(self.c_ciusb.size()))
+        elif array.size != NUM_ACTUATORS:
+            raise Exception('array.size must be ' + str(NUM_ACTUATORS))
         elif array.dtype != np.float64:
             raise Exception('array.dtype must be np.float64')
 
@@ -126,7 +129,7 @@ cdef class CIUsb:
 
         assert(norm(array, np.inf) <= 1.)
 
-        for i in range(140):
+        for i in range(NUM_ACTUATORS):
             db = round((array[i] + 1.0)/2.0*0xffff)
             if db < 0.0 or db > 0xffff:
                 raise Exception('write conversion error')
@@ -145,17 +148,17 @@ cdef class CIUsb:
         xmin = 0xffff
         xmax = 0x0
 
-        for i in range(140):
+        for i in range(NUM_ACTUATORS):
             if self.array2[i] < xmin:
                 xmin = self.array2[i]
             if self.array2[i] > xmax:
                 xmax = self.array2[i]
-        self.c_ciusb.write(self.array2, 160)
+        self.c_ciusb.write(self.array2, NUM_DAC)
 
     def size(self):
         "Number of actuators."
         # return self.c_ciusb.size()
-        return 140
+        return NUM_ACTUATORS
 
     def close(self):
         if self.opened:
@@ -164,7 +167,7 @@ cdef class CIUsb:
             self.dev = -1
 
     def preset(self, name, mag=0.7):
-        u = np.zeros((140,))
+        u = np.zeros((NUM_ACTUATORS,))
         if name == 'centre':
             u[63:65] = mag
             u[75:77] = mag
@@ -220,7 +223,10 @@ cdef class CIUsb:
         return u
 
     def get_transform(self):
-        return 'v = u'
+        return self.transform
+
+    def set_transform(self, tx):
+        self.transform = tx
 
     def get_serial_number(self):
         if self.opened:
