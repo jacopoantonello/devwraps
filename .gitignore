@@ -7,3 +7,4 @@ devwraps/sdk3.c
 devwraps.egg-info/
 dist/
 *.pyd
+__pycache__/
