@@ -45,6 +45,12 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 PROGFILES = os.environ['PROGRAMFILES']
 
 
+def lookup_version():
+    with open(os.path.join('devwraps', '__init__.py'), 'r') as f:
+        m = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", f.read(), re.M)
+    return m.group(1)
+
+
 def make_ciusb(fillout, remove, pkgdata):
     dir1 = path.join(PROGFILES, r'Boston Micromachines\Usb\CIUsbLib')
     f1 = path.join(
@@ -140,9 +146,10 @@ names = [e.name for e in exts]
 if len(names) == 0:
     raise ValueError('No drivers found')
 
+
 setup(
     name='devwraps',
-    version='0.1',
+    version=lookup_version(),
     description='Python wrappers for deformable mirrors and cameras',
     long_description=long_description,
     url='',
