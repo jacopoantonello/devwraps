@@ -4,10 +4,10 @@
 __author__ = 'Jacopo Antonello'
 __copyright__ = 'Copyright 2018, Jacopo Antonello'
 __license__ = 'GPLv3+'
-__version__ = '0.2'
+__version__ = '0.0.2'
 __email__ = 'jacopo.antonello@dpag.ox.ac.uk'
 __status__ = 'Beta'
-__doc__ = """devwraps - some device wrappers for Python
+__doc__ = """devwraps - some device wrappers for Python 3
 
     Version {}
 """.format(__version__)
