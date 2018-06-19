@@ -18,7 +18,9 @@ class ximea:
         ndevs = xiapi.Camera().get_number_devices()
         for i in range(ndevs):
             ci = xiapi.Camera(dev_id=i)
-            self.serials.append(ci.get_device_sn())
+            ci.open_device()
+            self.serials.append(ci.get_device_sn().decode('utf-8'))
+            ci.close_device()
 
     def open(self, serial=None):
         if self.opened and serial is None:
@@ -30,7 +32,7 @@ class ximea:
         if serial is None:
             self.cam = xiapi.Camera()
         else:
-            self.cam = xiapi.Camera(dev_id=self.serial.index(serial))
+            self.cam = xiapi.Camera(dev_id=self.serials.index(serial))
         self.cam.open_device()
         self.img = xiapi.Image()
         self.opened = True
@@ -84,23 +86,23 @@ class ximea:
 
     def get_exposure(self):
         if self.opened:
-            return self.cam.get_exposure()
+            return self.cam.get_exposure()/1e3
         else:
             return None
 
     def set_exposure(self, fps):
         if self.opened:
-            self.cam.set_exposure(fps)
-            return self.cam.get_exposure()
+            self.cam.set_exposure(int(fps*1e3))
+            return self.cam.get_exposure()/1e3
         else:
             return None
 
     def get_exposure_range(self):
         if self.opened:
             return (
-                self.cam.get_exposure_minimum(),
-                self.cam.get_exposure_maximum(),
-                self.cam.get_exposure_increment())
+                self.cam.get_exposure_minimum()/1e3,
+                self.cam.get_exposure_maximum()/1e3,
+                self.cam.get_exposure_increment()/1e3)
         else:
             return None
 
@@ -113,16 +115,21 @@ class ximea:
     def get_image_max(self):
         if self.opened:
             num = self.cam.get_image_data_bit_depth()
-            return 2**num - 1
+            if num == 'XI_BPP_8':
+                return 2**8 -1
+            elif num == 'XI_BPP_16':
+                return 2**16 -1
+            else:
+                raise NotImplementedError()
         else:
             return 0
 
     def get_image_dtype(self):
         if self.opened:
             num = self.cam.get_image_data_bit_depth()
-            if num <= 8:
+            if num == 'XI_BPP_8':
                 return np.uint8
-            elif num <= 16:
+            elif num == 'XI_BPP_16':
                 return np.uint16
             else:
                 raise NotImplementedError()
@@ -144,6 +151,7 @@ class ximea:
         self.cam.stop_acquisition()
 
         img = self.img.get_image_data_numpy()
-        assert(img.dtype == self.cam.get_image_dtype)
+#        print(dir(self.cam))
+#        assert(img.dtype == self.cam.get_image_dtype)
 
         return img
