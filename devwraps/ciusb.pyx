@@ -27,6 +27,7 @@
 
 
 import numpy as np
+import re
 
 cimport cython
 cimport numpy as np
@@ -77,7 +78,8 @@ cdef class CIUsb:
         elif dev is None:
             dev = 0
         elif type(dev) == str:
-            dev = int(dev)
+            devnum = re.search('([0-9]+)', dev).group(1)
+            dev = int(devnum)
 
         if self.c_ciusb.open(dev):
             raise Exception('device {} not found'.format(dev))
