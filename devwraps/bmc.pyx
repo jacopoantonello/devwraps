@@ -40,6 +40,31 @@ from .bmcd cimport BMCErrorString, BMCSetArray
 from libc.stdlib cimport malloc, free
 
 
+IGNORE_DM_SERIALS = [
+    'FAKE137TEST',
+    'Hex1011#000',
+    'Hex1011#USB',
+    'HexW111#000',
+    'HexW111#USB',
+    'HexW111#XCL',
+    'HexW507#000',
+    'HexW507#USB',
+    'HVA137_0000',
+    'HVA140_0000',
+    'HVA32_00000',
+    'HVA4K_00000',
+    'KILO1024_00',
+    'KILO2040_00',
+    'KILO492_000',
+    'KILO952_000',
+    'MiniTestRng',
+    'MiniUSB0000',
+    'MultiUSB000',
+    'SD1024_0000',
+    'TestInactiv',
+    ]
+
+
 np.import_array()
 
 
@@ -55,14 +80,34 @@ cdef class BMC:
         self.opened = 0
         self.transform = None
 
-    def get_devices(self, dpath=None, pat='C17'):
+    def get_devices(self, dpath=None, ignore=None, try_open=False):
         if dpath is None:
             dpath = path.join(
                 os.environ['PROGRAMFILES'], r'Boston Micromachines\Profiles')
         l = [
                 path.basename(p).rstrip('.dm') for p in
                 glob(path.join(dpath, '*.dm'))]
-        return [p for p in l if p.startswith(pat)]
+        if ignore is None:
+            ignore = IGNORE_DM_SERIALS
+        devs = set(l) - set(ignore)
+
+        if try_open and self.opened:
+            raise ValueError('try_open supplied but {} is opened already'.format(
+                self.serial_number))
+
+        if try_open:
+            devs2 = []
+            for d in devs:
+                try:
+                    self.open(d)
+                    devs2.append(d)
+                except Exception:
+                    pass
+                finally:
+                    self.close()
+            devs = devs2
+
+        return list(devs)
 
     def open(self, dev=None):
         cdef BMCRC rv
