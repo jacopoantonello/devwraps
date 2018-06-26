@@ -47,6 +47,7 @@ IGNORE_DM_SERIALS = [
     'HexW111#000',
     'HexW111#USB',
     'HexW111#XCL',
+    'HEX3072_000',
     'HexW507#000',
     'HexW507#USB',
     'HVA137_0000',

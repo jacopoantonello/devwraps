@@ -79,12 +79,18 @@ def make_bmc(fillout, remove, pkgdata):
 
     if not path.isdir(dir1) or not path.isdir(dir2):
         return
+    if path.isfile(path.join(dir1, 'BMC2.lib')):
+        libname = 'BMC2'
+    elif path.isfile(path.join(dir1, 'BMC3.lib')):
+        libname = 'BMC3'
+    else:
+        return
 
     fillout.append(Extension(
         'devwraps.bmc', [r'devwraps\bmc.pyx'],
         include_dirs=[r'devwraps', numpy.get_include(), dir2],
         library_dirs=[dir1],
-        libraries=['BMC2'],
+        libraries=[libname],
     ))
     remove.append(r'devwraps\bmc.c')
 
