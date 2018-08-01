@@ -1312,3 +1312,7 @@ cdef class SDK3:
     def get_camera_info(self):
         # TODO fixme
         return (self.get_camera_name(), self.get_camera_model())
+
+    def get_sensor_info(self):
+        # TODO fixme
+        return ('',)
