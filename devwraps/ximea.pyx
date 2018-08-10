@@ -57,7 +57,8 @@ from .ximead cimport (
     MM40_NO_DEVICES_FOUND, MM40_RESOURCE_OR_FUNCTION_LOCKED,
     MM40_BUFFER_SIZE_TOO_SMALL, MM40_COULDNT_INIT_PROCESSOR,
     MM40_NOT_INITIALIZED, MM40_RESOURCE_NOT_FOUND,
-    xiGetNumberDevices, xiGetDeviceInfoString,
+    xiGetNumberDevices, xiGetDeviceInfoString, XI_OPEN_BY_SN,
+    xiOpenDevice, xiOpenDeviceBy, xiCloseDevice,
     )
 
 
@@ -250,10 +251,12 @@ cdef class BufWrap:
 
 cdef class Ximea:
 
+    cdef void *dev
     cdef list bufwraps
 
     def __cinit__(self):
-        pass
+        self.dev = NULL
+        self.bufwraps = []
 
     def get_number_of_cameras(self):
         cdef unsigned long num
@@ -264,7 +267,7 @@ cdef class Ximea:
     def get_devices(self):
         cdef unsigned long num
         cdef char sn[STRLEN]
-        devs = []
+        cdef devs = []
         
         check(xiGetNumberDevices(&num))
         for i in range(num):
@@ -272,3 +275,42 @@ cdef class Ximea:
             devs.append(sn.decode('utf-8'))
 
         return devs
+
+    def open(self, str serial=None):
+        cdef unsigned long num
+
+        if self.dev != NULL and serial is not None:
+            # camera already opened but a name specified
+            raise Exception('Camera already opened')
+        elif self.dev != NULL:
+            # open has been called twice, keep quiet
+            return
+
+        if serial is None:
+            check(xiGetNumberDevices(&num))
+            if num <= 0:
+                raise Exception('No camera found')
+            check(xiOpenDevice(0, &self.dev))
+        else:
+            str1 = serial
+            check(xiOpenDeviceBy(
+                XI_OPEN_BY_SN, serial.encode('utf-8'), &self.dev))
+
+        assert(self.dev)
+
+        # self._init_bufs()
+
+    def close(self):
+        if self.dev:
+            # for i in range(len(self.bufwraps)):
+            #     ptr = self.bufwraps[i].get_data()
+            #     ret = is_FreeImageMem(
+            #         self.phCam, <char *>ptr, self.bufwraps[i].get_memid())
+            #     if ret != IS_SUCCESS:
+            #         raise Exception('Error in is_FreeImageMem')
+
+            self.bufwraps.clear()
+            # self.lastSeqBuf = NULL
+
+            check(xiCloseDevice(self.dev))
+            self.dev = NULL

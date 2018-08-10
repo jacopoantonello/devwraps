@@ -38,10 +38,15 @@ cdef extern from "xiApi.h":
     # ctypedef unsigned long DWORD
     # ctypedef DWORD * PDWORD
 
+    cdef int XI_OPEN_BY_SN = 1
+
     cdef int xiGetNumberDevices(unsigned long *pNumberDevices)
     cdef int xiGetDeviceInfoString(
         unsigned long DevId, const char* prm, char* value,
         unsigned long value_size)
+    cdef int xiOpenDeviceBy(int sel, const char* prm, void **hDevice)
+    cdef int xiOpenDevice(unsigned long DevId, void **hDevice)
+    cdef int xiCloseDevice(void *hDevice)
 
 cdef extern from "m3ErrorCodes.h":
     cdef int MM40_OK                         =  0
