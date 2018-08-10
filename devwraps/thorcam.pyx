@@ -843,7 +843,7 @@ cdef class ThorCam:
             return None
 
     def get_pixel_size(self):
-        "Get pixel size (width, height) in um."
+        "Get pixel size (height, width) in um."
 
         if self.phCam:
             return (self.info.wPixelSize/100, self.info.wPixelSize/100)
