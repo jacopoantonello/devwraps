@@ -39,6 +39,9 @@ cdef extern from "xiApi.h":
     # ctypedef DWORD * PDWORD
 
     cdef int xiGetNumberDevices(unsigned long *pNumberDevices)
+    cdef int xiGetDeviceInfoString(
+        unsigned long DevId, const char* prm, char* value,
+        unsigned long value_size)
 
 cdef extern from "m3ErrorCodes.h":
     cdef int MM40_OK                         =  0

@@ -57,7 +57,7 @@ from .ximead cimport (
     MM40_NO_DEVICES_FOUND, MM40_RESOURCE_OR_FUNCTION_LOCKED,
     MM40_BUFFER_SIZE_TOO_SMALL, MM40_COULDNT_INIT_PROCESSOR,
     MM40_NOT_INITIALIZED, MM40_RESOURCE_NOT_FOUND,
-    xiGetNumberDevices,
+    xiGetNumberDevices, xiGetDeviceInfoString,
     )
 
 
@@ -67,9 +67,10 @@ cdef extern from "numpy/ndarraytypes.h":
     int NPY_ARRAY_CARRAY_RO
 
 DEF DEBUG = 1
+DEF STRLEN = 1024
 
 cdef check(ret):
-    if ret is not None:
+    if ret != MM40_OK:
         raise Exception(error_string(ret))
 
 
@@ -255,10 +256,19 @@ cdef class Ximea:
         pass
 
     def get_number_of_cameras(self):
-        pass
-
-    def get_devices(self):
         cdef unsigned long num
         
         check(xiGetNumberDevices(&num))
-        print(num)
+        return num
+
+    def get_devices(self):
+        cdef unsigned long num
+        cdef char sn[STRLEN]
+        devs = []
+        
+        check(xiGetNumberDevices(&num))
+        for i in range(num):
+            check(xiGetDeviceInfoString(i, "device_sn", sn, STRLEN - 1))
+            devs.append(sn.decode('utf-8'))
+
+        return devs

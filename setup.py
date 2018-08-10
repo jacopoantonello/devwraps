@@ -178,10 +178,10 @@ def make_ximea(fillout, remove, pkgdata):
 exts = []
 remove = []
 pkgdata = []
-make_ciusb(exts, remove, pkgdata)
-make_bmc(exts, remove, pkgdata)
-make_thorcam(exts, remove, pkgdata)
-make_sdk3(exts, remove, pkgdata)
+# make_ciusb(exts, remove, pkgdata)
+# make_bmc(exts, remove, pkgdata)
+# make_thorcam(exts, remove, pkgdata)
+# make_sdk3(exts, remove, pkgdata)
 make_ximea(exts, remove, pkgdata)
 names = [e.name for e in exts]
 if len(names) == 0:
