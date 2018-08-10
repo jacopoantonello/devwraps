@@ -433,3 +433,44 @@ cdef class Ximea:
                 raise ValueError(f'Unknown pixel size for model {sn1}')
         else:
             return None
+
+    def get_camera_model(self):
+        cdef char sn[STRLEN]
+
+        if self.dev:
+            check(xiGetParamString(self.dev, 'device_name', sn, STRLEN))
+            return sn.decode('utf-8')
+        else:
+            return None
+
+    def set_gain(self, float fps):
+        if self.dev:
+            check(xiSetParamFloat(self.dev, 'gain', fps))
+            check(xiGetParamFloat(self.dev, 'gain', &fps))
+
+            return fps
+        else:
+            return 0.
+
+    def get_gain(self):
+        cdef float f
+
+        if self.dev:
+            check(xiGetParamFloat(self.dev, 'gain', &f))
+            return f
+        else:
+            return 0.
+
+    def get_gain_range(self):
+        cdef float f0
+        cdef float f1
+        cdef float f2
+
+        if self.dev:
+            check(xiGetParamFloat(self.dev, 'gain:min', &f0))
+            check(xiGetParamFloat(self.dev, 'gain:max', &f1))
+            check(xiGetParamFloat(self.dev, 'gain:inc', &f2))
+
+            return (f0, f1, f2)
+        else:
+            return None
