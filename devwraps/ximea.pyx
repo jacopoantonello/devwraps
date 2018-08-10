@@ -59,6 +59,7 @@ from .ximead cimport (
     MM40_NOT_INITIALIZED, MM40_RESOURCE_NOT_FOUND,
     xiGetNumberDevices, xiGetDeviceInfoString, XI_OPEN_BY_SN,
     xiOpenDevice, xiOpenDeviceBy, xiCloseDevice, xiGetParamInt, xiSetParamInt,
+    xiGetParamFloat, xiSetParamFloat, xiGetParamString,
     )
 
 
@@ -326,15 +327,14 @@ cdef class Ximea:
         else:
             return None
 
-    def get_exposure(self):
-        "Get exposure in ms."
-        cdef int i
+    def get_serial_number(self):
+        cdef char sn[STRLEN]
 
         if self.dev:
-            check(xiGetParamInt(self.dev, 'exposure', &i))
-            return i/1e3
+            check(xiGetParamString(self.dev, 'device_sn', sn, STRLEN))
+            return sn.decode('utf-8')
         else:
-            return 0.
+            return None
 
     def set_exposure(self, double exp):
         "Set exposure in ms."
@@ -347,3 +347,89 @@ cdef class Ximea:
             return i/1000
         else:
             return 0.
+
+    def get_exposure(self):
+        "Get exposure in ms."
+        cdef int i
+
+        if self.dev:
+            check(xiGetParamInt(self.dev, 'exposure', &i))
+            return i/1e3
+        else:
+            return 0.
+
+    def get_exposure_range(self):
+        """Get exposure range.
+
+        Returns
+        -------
+        -   `(min, max, step)`: exposure range
+
+        """
+        cdef int i0
+        cdef int i1
+        cdef int i2
+
+        if self.dev:
+            check(xiGetParamInt(self.dev, 'exposure:min', &i0))
+            check(xiGetParamInt(self.dev, 'exposure:max', &i1))
+            check(xiGetParamInt(self.dev, 'exposure:inc', &i2))
+
+            return (1e-3*i0, 1e-3*i1, 1e-3*i2)
+        else:
+            return None
+
+    def set_framerate(self, float fps):
+        if self.dev:
+            check(xiSetParamFloat(self.dev, 'framerate', fps))
+            check(xiGetParamFloat(self.dev, 'framerate', &fps))
+
+            return fps
+        else:
+            return 0.
+
+    def get_framerate(self):
+        cdef float f
+
+        if self.dev:
+            check(xiGetParamFloat(self.dev, 'framerate', &f))
+            return f
+        else:
+            return 0.
+
+    def get_framerate_range(self):
+        cdef float f0
+        cdef float f1
+        cdef float f2
+
+        if self.dev:
+            check(xiGetParamFloat(self.dev, 'framerate:min', &f0))
+            check(xiGetParamFloat(self.dev, 'framerate:max', &f1))
+            check(xiGetParamFloat(self.dev, 'framerate:inc', &f2))
+
+            return (f0, f1, f2)
+        else:
+            return None
+
+    def get_pixel_size(self):
+        "Get pixel size (height, width) in um."
+        cdef char sn[STRLEN]
+        cdef str sn1
+
+        if self.dev:
+            check(xiGetParamString(self.dev, 'device_name', sn, STRLEN))
+            sn1 = sn.decode('utf-8')
+            if sn1 in ['MQ003MG-CM', 'MQ003CG-CM']:
+                return (7.4, 7.4)
+            elif sn1 in ['MQ013MG-E2', 'MQ013CG-E2', 'MQ013RG-E2']:
+                return (5.3, 5.3)
+            elif sn1 in ['MQ013MG-ON', 'MQ013CG-ON']:
+                return (4.8, 4.8)
+            elif sn1 in [
+                    'MQ022MG-CM', 'MQ022CG-CM', 'MQ022RG-CM',
+                    'MQ042MG-CM', 'MQ042CG-CM', 'MQ042RG-CM']:
+                return (5.5, 5.5)
+            else:
+                raise ValueError(f'Unknown pixel size for model {sn1}')
+        else:
+            return None
