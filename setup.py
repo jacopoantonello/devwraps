@@ -43,6 +43,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 PROGFILES = os.environ['PROGRAMFILES']
+WINDIR = os.environ['WINDIR']
 
 
 def lookup_version():
@@ -139,6 +140,29 @@ def make_sdk3(fillout, remove, pkgdata):
         libraries=['atcorem'],
     ))
     remove.append(r'devwraps\sdk3.c')
+
+
+def make_ximea(fillout, remove, pkgdata):
+    dir1 = None
+    for p in [
+            path.isdir(path.join(PROGFILES, r'XIMEA')),
+            path.join(path.pardir(PROGFILES), r'XIMEA')]:
+        if path.isdir(p):
+            dir1 = p
+            break
+    if dir1 is None:
+        return
+
+    dir2 = path.join(dir1, r'API')
+    dir3 = path.join(dir1, r'API/x64')
+
+    fillout.append(Extension(
+        'devwraps.ximea', [r'devwraps\ximea.pyx'],
+        include_dirs=[r'devwraps', numpy.get_include(), dir2],
+        library_dirs=[dir3],
+        libraries=['xiapi64'],
+    ))
+    remove.append(r'devwraps\ximea.c')
 
 
 exts = []
