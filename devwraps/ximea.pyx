@@ -58,7 +58,7 @@ from .ximead cimport (
     MM40_BUFFER_SIZE_TOO_SMALL, MM40_COULDNT_INIT_PROCESSOR,
     MM40_NOT_INITIALIZED, MM40_RESOURCE_NOT_FOUND,
     xiGetNumberDevices, xiGetDeviceInfoString, XI_OPEN_BY_SN,
-    xiOpenDevice, xiOpenDeviceBy, xiCloseDevice,
+    xiOpenDevice, xiOpenDeviceBy, xiCloseDevice, xiGetParamInt, xiSetParamInt,
     )
 
 
@@ -314,3 +314,36 @@ cdef class Ximea:
 
             check(xiCloseDevice(self.dev))
             self.dev = NULL
+
+    def shape(self):
+        cdef int width
+        cdef int height
+
+        if self.dev:
+            check(xiGetParamInt(self.dev, 'width', &width))
+            check(xiGetParamInt(self.dev, 'height', &height))
+            return (height, width)
+        else:
+            return None
+
+    def get_exposure(self):
+        "Get exposure in ms."
+        cdef int i
+
+        if self.dev:
+            check(xiGetParamInt(self.dev, 'exposure', &i))
+            return i/1e3
+        else:
+            return 0.
+
+    def set_exposure(self, double exp):
+        "Set exposure in ms."
+        cdef int i
+
+        if self.dev:
+            i = int(exp*1000)
+            check(xiSetParamInt(self.dev, 'exposure', i))
+            check(xiGetParamInt(self.dev, 'exposure', &i))
+            return i/1000
+        else:
+            return 0.

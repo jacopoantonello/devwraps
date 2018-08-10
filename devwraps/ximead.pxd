@@ -40,6 +40,13 @@ cdef extern from "xiApi.h":
 
     cdef int XI_OPEN_BY_SN = 1
 
+    cdef int xiTypeInteger = 0
+    cdef int peFloat = 1
+    cdef int eString = 2
+    cdef int peEnum = 3
+    cdef int peBoolean = 4
+    cdef int peCommand = 5
+
     cdef int xiGetNumberDevices(unsigned long *pNumberDevices)
     cdef int xiGetDeviceInfoString(
         unsigned long DevId, const char* prm, char* value,
@@ -47,6 +54,15 @@ cdef extern from "xiApi.h":
     cdef int xiOpenDeviceBy(int sel, const char* prm, void **hDevice)
     cdef int xiOpenDevice(unsigned long DevId, void **hDevice)
     cdef int xiCloseDevice(void *hDevice)
+    cdef int xiSetParamInt(void *hDevice, const char* prm, const int val)
+    cdef int xiSetParamFloat(void *hDevice, const char* prm, const float val)
+    cdef int xiSetParamString(
+        void *hDevice, const char* prm, void* val, unsigned long size)
+    cdef int xiGetParamInt(void *hDevice, const char* prm, int* val)
+    cdef int xiGetParamFloat(void *hDevice, const char* prm, float* val)
+    cdef int xiGetParamString(
+        void *hDevice, const char* prm, void* val, unsigned int size)
+
 
 cdef extern from "m3ErrorCodes.h":
     cdef int MM40_OK                         =  0
