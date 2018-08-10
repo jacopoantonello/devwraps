@@ -34,23 +34,13 @@ cdef extern from "Python.h":
 
 cdef extern from "xiApi.h":
 
-    # ctypedef int USBCAMEXP
-    # ctypedef unsigned long USBCAMEXPUL
+    # ctypedef int XIR
     # ctypedef unsigned long DWORD
-    # ctypedef unsigned short WORD
-    # ctypedef DWORD HCAM
-    # ctypedef int BOOL
-    # ctypedef HANDLE HWND
-    # ctypedef PVOID HANDLE
-    # ctypedef void *PVOID
-    # cdef IS_GET_STATUS = 0x8000
+    # ctypedef DWORD * PDWORD
 
-    ctypedef int XIR
-    ctypedef unsigned long DWORD
-    ctypedef DWORD * PDWORD
+    cdef int xiGetNumberDevices(unsigned long *pNumberDevices)
 
-    cdef XIR xiGetNumberDevices(PDWORD pNumberDevices)
-
+cdef extern from "m3ErrorCodes.h":
     cdef int MM40_OK                         =  0
     cdef int MM40_INVALID_HANDLE             =  1
     cdef int MM40_READREG                    =  2

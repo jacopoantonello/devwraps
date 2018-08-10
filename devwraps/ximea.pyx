@@ -57,6 +57,7 @@ from .ximead cimport (
     MM40_NO_DEVICES_FOUND, MM40_RESOURCE_OR_FUNCTION_LOCKED,
     MM40_BUFFER_SIZE_TOO_SMALL, MM40_COULDNT_INIT_PROCESSOR,
     MM40_NOT_INITIALIZED, MM40_RESOURCE_NOT_FOUND,
+    xiGetNumberDevices,
     )
 
 
@@ -67,16 +68,12 @@ cdef extern from "numpy/ndarraytypes.h":
 
 DEF DEBUG = 1
 
-ctypedef int XIR
-ctypedef unsigned long DWORD
-ctypedef DWORD * PDWORD
-
 cdef check(ret):
     if ret is not None:
         raise Exception(error_string(ret))
 
 
-cdef str error_string(XIR e):
+cdef str error_string(int e):
     if e == MM40_OK:
         return None
     elif e == MM40_INVALID_HANDLE:
@@ -189,7 +186,7 @@ cdef str error_string(XIR e):
         return 'Device has been reset, abnormal initial state'
     elif e == MM40_NO_DEVICES_FOUND:
         return 'No Devices Found'
-    elif e == MM40_RESOURCE_OR_FUNCTION_LOCKE:
+    elif e == MM40_RESOURCE_OR_FUNCTION_LOCKED:
         return 'Resource (device) or function locked by mutex'
     elif e == MM40_BUFFER_SIZE_TOO_SMALL:
         return 'Buffer provided by user is too small'
@@ -261,7 +258,7 @@ cdef class Ximea:
         pass
 
     def get_devices(self):
-        cdef DWORD num
+        cdef unsigned long num
         
         check(xiGetNumberDevices(&num))
         print(num)
