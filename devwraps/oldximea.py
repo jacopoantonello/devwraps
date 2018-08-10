@@ -157,3 +157,11 @@ class Ximea:
         img = self.img.get_image_data_numpy()
 
         return img
+
+    def get_camera_info(self):
+        # TODO fixme
+        return ('',)
+
+    def get_sensor_info(self):
+        # TODO fixme
+        return ('',)
