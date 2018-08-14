@@ -23,10 +23,12 @@
 
 
 import sys
+import os
 import numpy as np
 cimport numpy as np
 
 from os import path
+from tempfile import NamedTemporaryFile
 
 from libc.string cimport memset, memcpy
 from libc.stdint cimport uintptr_t
@@ -862,7 +864,7 @@ cdef class ThorCam:
             if ret != IS_SUCCESS:
                 raise Exception('Failed to reset')
 
-    def save(self, str name='dump.ini'):
+    def save_ini(self, str name='dump.ini'):
         "Save camera parameters into an ini file."
         cdef Py_ssize_t length
         cdef wchar_t *fname = PyUnicode_AsWideCharString(name, &length)
@@ -875,7 +877,28 @@ cdef class ThorCam:
         else:
             raise Exception('Camera not opened')
 
-    def load(self, str name='dump.ini'):
+    def get_settings(self):
+        "Save camera settings into an string."
+        cdef Py_ssize_t length
+        cdef wchar_t *fname
+
+        f = NamedTemporaryFile('w', suffix='ini', delete=False)
+        f.close()
+        fname = PyUnicode_AsWideCharString(f.name, &length)
+        if self.phCam:
+            ret = is_ParameterSet(
+                self.phCam, IS_PARAMETERSET_CMD_SAVE_FILE, <void *>fname, 0)
+            if ret != IS_SUCCESS:
+                os.remove(f.name)
+                raise Exception('Failed to get settings')
+            with open(f.name, 'r') as fp:
+                settings = fp.read()
+            os.remove(f.name)
+            return settings
+        else:
+            raise Exception('Camera not opened')
+
+    def load_ini(self, str name='dump.ini'):
         "Load camera parameters from an ini file."
         cdef Py_ssize_t length
         cdef wchar_t *fname = PyUnicode_AsWideCharString(name, &length)
