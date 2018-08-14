@@ -158,10 +158,10 @@ class Ximea:
 
         return img
 
-    def get_camera_info(self):
-        # TODO fixme
-        return ('',)
-
-    def get_sensor_info(self):
-        # TODO fixme
-        return ('',)
+    def get_settings(self):
+        "Save camera settings into an string."
+        if not self.opened:
+            raise Exception('Camera not opened')
+        else:
+            return self.cam.get_device_manifest(
+                buffer_size=512*1024).decode('utf-8')
