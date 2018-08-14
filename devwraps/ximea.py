@@ -132,9 +132,9 @@ class Ximea:
         if self.opened:
             num = self.cam.get_image_data_bit_depth()
             if num == 'XI_BPP_8':
-                return np.uint8
+                return 'uint8'
             elif num == 'XI_BPP_16':
-                return np.uint16
+                return 'uint16'
             else:
                 raise NotImplementedError()
         else:
