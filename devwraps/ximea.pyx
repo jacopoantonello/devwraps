@@ -28,41 +28,50 @@ cimport numpy as np
 
 from os import path
 
-from libc.string cimport memset, memcpy
+from libc.string cimport memcpy
 from libc.stdint cimport uintptr_t
-from libc.stddef cimport wchar_t
 from libc.stdlib cimport free, malloc
-from cpython cimport PyObject, Py_INCREF
+from cpython cimport PyObject, Py_INCREF, PyInt_FromLong, PyFloat_FromDouble
 
 from .ximead cimport (
-    MM40_OK, MM40_INVALID_HANDLE, MM40_READREG, MM40_WRITEREG,
-    MM40_FREE_RESOURCES, MM40_FREE_CHANNEL, MM40_FREE_BANDWIDTH,
-    MM40_READBLK, MM40_WRITEBLK, MM40_NO_IMAGE, MM40_TIMEOUT,
-    MM40_INVALID_ARG, MM40_NOT_SUPPORTED, MM40_ISOCH_ATTACH_BUFFERS,
-    MM40_GET_OVERLAPPED_RESULT, MM40_MEMORY_ALLOCATION, MM40_DLLCONTEXTISNULL,
-    MM40_DLLCONTEXTISNONZERO, MM40_DLLCONTEXTEXIST, MM40_TOOMANYDEVICES,
-    MM40_ERRORCAMCONTEXT, MM40_UNKNOWN_HARDWARE, MM40_INVALID_TM_FILE,
-    MM40_INVALID_TM_TAG, MM40_INCOMPLETE_TM, MM40_BUS_RESET_FAILED,
-    MM40_NOT_IMPLEMENTED, MM40_SHADING_TOOBRIGHT, MM40_SHADING_TOODARK,
-    MM40_TOO_LOW_GAIN, MM40_INVALID_BPL, MM40_BPL_REALLOC,
-    MM40_INVALID_PIXEL_LIST, MM40_INVALID_FFS, MM40_INVALID_PROFILE,
-    MM40_INVALID_CALIBRATION, MM40_INVALID_BUFFER, MM40_INVALID_DATA,
-    MM40_TGBUSY, MM40_IO_WRONG, MM40_ACQUISITION_ALREADY_UP,
-    MM40_OLD_DRIVER_VERSION, MM40_GET_LAST_ERROR, MM40_CANT_PROCESS,
-    MM40_ACQUISITION_STOPED, MM40_ACQUISITION_STOPED_WERR,
-    MM40_INVALID_INPUT_ICC_PROFILE, MM40_INVALID_OUTPUT_ICC_PROFILE,
-    MM40_DEVICE_NOT_READY, MM40_SHADING_TOOCONTRAST, MM40_ALREADY_INITIALIZED,
-    MM40_NOT_ENOUGH_PRIVILEGES, MM40_NOT_COMPATIBLE_DRIVER,
-    MM40_TM_INVALID_RESOURCE, MM40_DEVICE_HAS_BEEN_RESETED,
-    MM40_NO_DEVICES_FOUND, MM40_RESOURCE_OR_FUNCTION_LOCKED,
-    MM40_BUFFER_SIZE_TOO_SMALL, MM40_COULDNT_INIT_PROCESSOR,
-    MM40_NOT_INITIALIZED, MM40_RESOURCE_NOT_FOUND,
+    XI_OK, XI_INVALID_HANDLE, XI_READREG, XI_WRITEREG,
+    XI_FREE_RESOURCES, XI_FREE_CHANNEL, XI_FREE_BANDWIDTH,
+    XI_READBLK, XI_WRITEBLK, XI_NO_IMAGE, XI_TIMEOUT,
+    XI_INVALID_ARG, XI_NOT_SUPPORTED, XI_ISOCH_ATTACH_BUFFERS,
+    XI_GET_OVERLAPPED_RESULT, XI_MEMORY_ALLOCATION, XI_DLLCONTEXTISNULL,
+    XI_DLLCONTEXTISNONZERO, XI_DLLCONTEXTEXIST, XI_TOOMANYDEVICES,
+    XI_ERRORCAMCONTEXT, XI_UNKNOWN_HARDWARE, XI_INVALID_TM_FILE,
+    XI_INVALID_TM_TAG, XI_INCOMPLETE_TM, XI_BUS_RESET_FAILED,
+    XI_NOT_IMPLEMENTED, XI_SHADING_TOOBRIGHT, XI_SHADING_TOODARK,
+    XI_TOO_LOW_GAIN, XI_INVALID_BPL, XI_BPL_REALLOC,
+    XI_INVALID_PIXEL_LIST, XI_INVALID_FFS, XI_INVALID_PROFILE,
+    XI_INVALID_CALIBRATION, XI_INVALID_BUFFER, XI_INVALID_DATA,
+    XI_TGBUSY, XI_IO_WRONG, XI_ACQUISITION_ALREADY_UP,
+    XI_OLD_DRIVER_VERSION, XI_GET_LAST_ERROR, XI_CANT_PROCESS,
+    XI_ACQUISITION_STOPED, XI_ACQUISITION_STOPED_WERR,
+    XI_INVALID_INPUT_ICC_PROFILE, XI_INVALID_OUTPUT_ICC_PROFILE,
+    XI_DEVICE_NOT_READY, XI_SHADING_TOOCONTRAST, XI_ALREADY_INITIALIZED,
+    XI_NOT_ENOUGH_PRIVILEGES, XI_NOT_COMPATIBLE_DRIVER,
+    XI_TM_INVALID_RESOURCE, XI_DEVICE_HAS_BEEN_RESETED,
+    XI_NO_DEVICES_FOUND, XI_RESOURCE_OR_FUNCTION_LOCKED,
+    XI_BUFFER_SIZE_TOO_SMALL, XI_COULDNT_INIT_PROCESSOR,
+    XI_NOT_INITIALIZED, XI_RESOURCE_NOT_FOUND, XI_UNKNOWN_PARAM,
+    XI_WRONG_PARAM_VALUE, XI_WRONG_PARAM_TYPE, XI_WRONG_PARAM_SIZE,
+    XI_BUFFER_TOO_SMALL, XI_NOT_SUPPORTED_PARAM, XI_NOT_SUPPORTED_PARAM_INFO,
+    XI_NOT_SUPPORTED_DATA_FORMAT, XI_READ_ONLY_PARAM,
+    XI_BANDWIDTH_NOT_SUPPORTED, XI_INVALID_FFS_FILE_NAME,
+    XI_FFS_FILE_NOT_FOUND, XI_PARAM_NOT_SETTABLE,
+    XI_SAFE_POLICY_NOT_SUPPORTED, XI_GPUDIRECT_NOT_AVAILABLE,
+    XI_PROC_OTHER_ERROR, XI_PROC_PROCESSING_ERROR,
+    XI_PROC_INPUT_FORMAT_UNSUPPORTED, XI_PROC_OUTPUT_FORMAT_UNSUPPORTED,
+    XI_OUT_OF_RANGE, xiGetParam, xiSetParam, xiTypeInteger, xiTypeFloat,
+    xiTypeString, xiTypeEnum, xiTypeBoolean, xiTypeCommand,
     xiGetNumberDevices, xiGetDeviceInfoString, XI_OPEN_BY_SN,
     xiOpenDevice, xiOpenDeviceBy, xiCloseDevice, xiGetParamInt, xiSetParamInt,
     xiGetParamFloat, xiSetParamFloat, xiGetParamString, XI_MONO8, XI_MONO16,
     XI_RGB24, XI_RGB32, XI_RGB_PLANAR, XI_RAW8, XI_RAW16,
     XI_FRM_TRANSPORT_DATA, XI_RGB48, XI_RGB64, XI_RGB16_PLANAR, XI_RAW8X2,
-    XI_RAW8X4, XI_RAW16X2, XI_RAW16X4,
+    XI_RAW8X4, XI_RAW16X2, XI_RAW16X4, XI_BINNING, XI_SKIPPING,
     )
 
 
@@ -75,134 +84,389 @@ DEF DEBUG = 1
 DEF STRLEN = 1024
 DEF LONGBUF = 1024*1024
 
+# from Ximea's xidefs.py
+VAL_TYPE = {
+    "exposure": xiTypeInteger,
+    "exposure_burst_count": xiTypeInteger,
+    "gain_selector": xiTypeEnum,
+    "gain": xiTypeFloat,
+    "downsampling": xiTypeEnum,
+    "downsampling_type": xiTypeEnum,
+    "test_pattern_generator_selector": xiTypeEnum,
+    "test_pattern": xiTypeEnum,
+    "imgdataformat": xiTypeEnum,
+    "shutter_type": xiTypeEnum,
+    "sensor_taps": xiTypeEnum,
+    "aeag": xiTypeBoolean,
+    "aeag_roi_offset_x": xiTypeInteger,
+    "aeag_roi_offset_y": xiTypeInteger,
+    "aeag_roi_width": xiTypeInteger,
+    "aeag_roi_height": xiTypeInteger,
+    "bpc_list_selector": xiTypeEnum,
+    "sens_defects_corr_list_content": xiTypeString,
+    "bpc": xiTypeBoolean,
+    "auto_wb": xiTypeBoolean,
+    "manual_wb": xiTypeCommand,
+    "wb_kr": xiTypeFloat,
+    "wb_kg": xiTypeFloat,
+    "wb_kb": xiTypeFloat,
+    "width": xiTypeInteger,
+    "height": xiTypeInteger,
+    "offsetX": xiTypeInteger,
+    "offsetY": xiTypeInteger,
+    "region_selector": xiTypeInteger,
+    "region_mode": xiTypeInteger,
+    "horizontal_flip": xiTypeBoolean,
+    "vertical_flip": xiTypeBoolean,
+    "ffc": xiTypeBoolean,
+    "ffc_flat_field_file_name": xiTypeString,
+    "ffc_dark_field_file_name": xiTypeString,
+    "binning_selector": xiTypeEnum,
+    "binning_vertical_mode": xiTypeEnum,
+    "binning_vertical": xiTypeInteger,
+    "binning_horizontal_mode": xiTypeEnum,
+    "binning_horizontal": xiTypeInteger,
+    "binning_horizontal_pattern": xiTypeEnum,
+    "binning_vertical_pattern": xiTypeEnum,
+    "decimation_selector": xiTypeEnum,
+    "decimation_vertical": xiTypeInteger,
+    "decimation_horizontal": xiTypeInteger,
+    "decimation_horizontal_pattern": xiTypeEnum,
+    "decimation_vertical_pattern": xiTypeEnum,
+    "exp_priority": xiTypeFloat,
+    "ag_max_limit": xiTypeFloat,
+    "ae_max_limit": xiTypeInteger,
+    "aeag_level": xiTypeInteger,
+    "limit_bandwidth": xiTypeInteger,
+    "limit_bandwidth_mode": xiTypeEnum,
+    "sensor_line_period": xiTypeFloat,
+    "sensor_bit_depth": xiTypeEnum,
+    "output_bit_depth": xiTypeEnum,
+    "image_data_bit_depth": xiTypeEnum,
+    "output_bit_packing": xiTypeBoolean,
+    "output_bit_packing_type": xiTypeEnum,
+    "iscooled": xiTypeBoolean,
+    "cooling": xiTypeEnum,
+    "target_temp": xiTypeFloat,
+    "temp_selector": xiTypeEnum,
+    "temp": xiTypeFloat,
+    "device_temperature_ctrl_mode": xiTypeEnum,
+    "chip_temp": xiTypeFloat,
+    "hous_temp": xiTypeFloat,
+    "hous_back_side_temp": xiTypeFloat,
+    "sensor_board_temp": xiTypeFloat,
+    "device_temperature_element_sel": xiTypeEnum,
+    "device_temperature_element_val": xiTypeFloat,
+    "cms": xiTypeEnum,
+    "cms_intent": xiTypeEnum,
+    "apply_cms": xiTypeBoolean,
+    "input_cms_profile": xiTypeString,
+    "output_cms_profile": xiTypeString,
+    "iscolor": xiTypeBoolean,
+    "cfa": xiTypeEnum,
+    "gammaY": xiTypeFloat,
+    "gammaC": xiTypeFloat,
+    "sharpness": xiTypeFloat,
+    "ccMTX00": xiTypeFloat,
+    "ccMTX01": xiTypeFloat,
+    "ccMTX02": xiTypeFloat,
+    "ccMTX03": xiTypeFloat,
+    "ccMTX10": xiTypeFloat,
+    "ccMTX11": xiTypeFloat,
+    "ccMTX12": xiTypeFloat,
+    "ccMTX13": xiTypeFloat,
+    "ccMTX20": xiTypeFloat,
+    "ccMTX21": xiTypeFloat,
+    "ccMTX22": xiTypeFloat,
+    "ccMTX23": xiTypeFloat,
+    "ccMTX30": xiTypeFloat,
+    "ccMTX31": xiTypeFloat,
+    "ccMTX32": xiTypeFloat,
+    "ccMTX33": xiTypeFloat,
+    "defccMTX": xiTypeCommand,
+    "trigger_source": xiTypeEnum,
+    "trigger_software": xiTypeCommand,
+    "trigger_selector": xiTypeEnum,
+    "trigger_overlap": xiTypeEnum,
+    "acq_frame_burst_count": xiTypeInteger,
+    "gpi_selector": xiTypeEnum,
+    "gpi_mode": xiTypeEnum,
+    "gpi_level": xiTypeInteger,
+    "gpo_selector": xiTypeEnum,
+    "gpo_mode": xiTypeEnum,
+    "led_selector": xiTypeEnum,
+    "led_mode": xiTypeEnum,
+    "dbnc_en": xiTypeBoolean,
+    "dbnc_t0": xiTypeInteger,
+    "dbnc_t1": xiTypeInteger,
+    "dbnc_pol": xiTypeInteger,
+    "lens_mode": xiTypeBoolean,
+    "lens_aperture_value": xiTypeFloat,
+    "lens_focus_movement_value": xiTypeInteger,
+    "lens_focus_move": xiTypeCommand,
+    "lens_focus_distance": xiTypeFloat,
+    "lens_focal_length": xiTypeFloat,
+    "lens_feature_selector": xiTypeEnum,
+    "lens_feature": xiTypeFloat,
+    "lens_comm_data": xiTypeString,
+    "device_name": xiTypeString,
+    "device_type": xiTypeString,
+    "device_model_id": xiTypeInteger,
+    "sensor_model_id": xiTypeInteger,
+    "device_sn": xiTypeString,
+    "device_sens_sn": xiTypeString,
+    "device_id": xiTypeString,
+    "device_inst_path": xiTypeString,
+    "device_loc_path": xiTypeString,
+    "device_user_id": xiTypeString,
+    "device_manifest": xiTypeString,
+    "image_user_data": xiTypeInteger,
+    "imgdataformatrgb32alpha": xiTypeInteger,
+    "imgpayloadsize": xiTypeInteger,
+    "transport_pixel_format": xiTypeEnum,
+    "transport_data_target": xiTypeEnum,
+    "sensor_clock_freq_hz": xiTypeFloat,
+    "sensor_clock_freq_index": xiTypeInteger,
+    "sensor_output_channel_count": xiTypeEnum,
+    "framerate": xiTypeFloat,
+    "counter_selector": xiTypeEnum,
+    "counter_value": xiTypeInteger,
+    "acq_timing_mode": xiTypeEnum,
+    "available_bandwidth": xiTypeInteger,
+    "buffer_policy": xiTypeEnum,
+    "LUTEnable": xiTypeBoolean,
+    "LUTIndex": xiTypeInteger,
+    "LUTValue": xiTypeInteger,
+    "trigger_delay": xiTypeInteger,
+    "ts_rst_mode": xiTypeEnum,
+    "ts_rst_source": xiTypeEnum,
+    "isexist": xiTypeBoolean,
+    "acq_buffer_size": xiTypeInteger,
+    "acq_buffer_size_unit": xiTypeInteger,
+    "acq_transport_buffer_size": xiTypeInteger,
+    "acq_transport_packet_size": xiTypeInteger,
+    "buffers_queue_size": xiTypeInteger,
+    "acq_transport_buffer_commit": xiTypeInteger,
+    "recent_frame": xiTypeBoolean,
+    "device_reset": xiTypeCommand,
+    "column_fpn_correction": xiTypeEnum,
+    "row_fpn_correction": xiTypeEnum,
+    "image_correction_selector": xiTypeEnum,
+    "image_correction_value": xiTypeFloat,
+    "sensor_mode": xiTypeEnum,
+    "hdr": xiTypeBoolean,
+    "hdr_kneepoint_count": xiTypeInteger,
+    "hdr_t1": xiTypeInteger,
+    "hdr_t2": xiTypeInteger,
+    "hdr_kneepoint1": xiTypeInteger,
+    "hdr_kneepoint2": xiTypeInteger,
+    "image_black_level": xiTypeInteger,
+    "api_version": xiTypeString,
+    "drv_version": xiTypeString,
+    "version_mcu1": xiTypeString,
+    "version_mcu2": xiTypeString,
+    "version_mcu3": xiTypeString,
+    "version_fpga1": xiTypeString,
+    "version_xmlman": xiTypeString,
+    "hw_revision": xiTypeString,
+    "debug_level": xiTypeEnum,
+    "auto_bandwidth_calculation": xiTypeBoolean,
+    "new_process_chain_enable": xiTypeBoolean,
+    "cam_enum_golden_enabled": xiTypeBoolean,
+    "reset_usb_if_bootloader": xiTypeBoolean,
+    "cam_simulators_count": xiTypeInteger,
+    "cam_sensor_init_disabled": xiTypeBoolean,
+    "read_file_ffs": xiTypeString,
+    "write_file_ffs": xiTypeString,
+    "ffs_file_name": xiTypeString,
+    "ffs_file_id": xiTypeInteger,
+    "ffs_file_size": xiTypeInteger,
+    "free_ffs_size": xiTypeInteger,
+    "used_ffs_size": xiTypeInteger,
+    "ffs_access_key": xiTypeInteger,
+    "xiapi_context_list": xiTypeString,
+    "sensor_feature_selector": xiTypeEnum,
+    "sensor_feature_value": xiTypeInteger,
+    "ext_feature_selector": xiTypeEnum,
+    "ext_feature": xiTypeInteger,
+    "device_unit_selector": xiTypeEnum,
+    "device_unit_register_selector": xiTypeInteger,
+    "device_unit_register_value": xiTypeInteger,
+    "api_progress_callback": xiTypeString,
+    "acquisition_status_selector": xiTypeEnum,
+    "acquisition_status": xiTypeEnum,
+    }
+
 cdef check(ret):
-    if ret != MM40_OK:
+    if ret != XI_OK:
         raise Exception(error_string(ret))
 
 
 cdef str error_string(int e):
-    if e == MM40_OK:
+    if e == XI_OK:
         return None
-    elif e == MM40_INVALID_HANDLE:
+    elif e == XI_INVALID_HANDLE:
         return 'Invalid handle'
-    elif e == MM40_READREG:
+    elif e == XI_READREG:
         return 'Register read error'
-    elif e == MM40_WRITEREG:
+    elif e == XI_WRITEREG:
         return 'Register write error'
-    elif e == MM40_FREE_RESOURCES:
+    elif e == XI_FREE_RESOURCES:
         return 'Freeing resources error'
-    elif e == MM40_FREE_CHANNEL:
+    elif e == XI_FREE_CHANNEL:
         return 'Freeing channel error'
-    elif e == MM40_FREE_BANDWIDTH:
+    elif e == XI_FREE_BANDWIDTH:
         return 'Freeing bandwith error'
-    elif e == MM40_READBLK:
+    elif e == XI_READBLK:
         return 'Read block error'
-    elif e == MM40_WRITEBLK:
+    elif e == XI_WRITEBLK:
         return 'Write block error'
-    elif e == MM40_NO_IMAGE:
+    elif e == XI_NO_IMAGE:
         return 'No image'
-    elif e == MM40_TIMEOUT:
+    elif e == XI_TIMEOUT:
         return 'Timeout'
-    elif e == MM40_INVALID_ARG:
+    elif e == XI_INVALID_ARG:
         return 'Invalid arguments supplied'
-    elif e == MM40_NOT_SUPPORTED:
+    elif e == XI_NOT_SUPPORTED:
         return 'Not supported'
-    elif e == MM40_ISOCH_ATTACH_BUFFERS:
+    elif e == XI_ISOCH_ATTACH_BUFFERS:
         return 'Attach buffers error'
-    elif e == MM40_GET_OVERLAPPED_RESULT:
+    elif e == XI_GET_OVERLAPPED_RESULT:
         return 'Overlapped result'
-    elif e == MM40_MEMORY_ALLOCATION:
+    elif e == XI_MEMORY_ALLOCATION:
         return 'Memory allocation error'
-    elif e == MM40_DLLCONTEXTISNULL:
+    elif e == XI_DLLCONTEXTISNULL:
         return 'DLL context is NULL'
-    elif e == MM40_DLLCONTEXTISNONZERO:
+    elif e == XI_DLLCONTEXTISNONZERO:
         return 'DLL context is non zero'
-    elif e == MM40_DLLCONTEXTEXIST:
+    elif e == XI_DLLCONTEXTEXIST:
         return 'DLL context exists'
-    elif e == MM40_TOOMANYDEVICES:
+    elif e == XI_TOOMANYDEVICES:
         return 'Too many devices connected'
-    elif e == MM40_ERRORCAMCONTEXT:
+    elif e == XI_ERRORCAMCONTEXT:
         return 'Camera context error'
-    elif e == MM40_UNKNOWN_HARDWARE:
+    elif e == XI_UNKNOWN_HARDWARE:
         return 'Unknown hardware'
-    elif e == MM40_INVALID_TM_FILE:
+    elif e == XI_INVALID_TM_FILE:
         return 'Invalid TM file'
-    elif e == MM40_INVALID_TM_TAG:
+    elif e == XI_INVALID_TM_TAG:
         return 'Invalid TM tag'
-    elif e == MM40_INCOMPLETE_TM:
+    elif e == XI_INCOMPLETE_TM:
         return 'Incomplete TM'
-    elif e == MM40_BUS_RESET_FAILED:
+    elif e == XI_BUS_RESET_FAILED:
         return 'Bus reset error'
-    elif e == MM40_NOT_IMPLEMENTED:
+    elif e == XI_NOT_IMPLEMENTED:
         return 'Not implemented'
-    elif e == MM40_SHADING_TOOBRIGHT:
+    elif e == XI_SHADING_TOOBRIGHT:
         return 'Shading is too bright'
-    elif e == MM40_SHADING_TOODARK:
+    elif e == XI_SHADING_TOODARK:
         return 'Shading is too dark'
-    elif e == MM40_TOO_LOW_GAIN:
+    elif e == XI_TOO_LOW_GAIN:
         return 'Gain is too low'
-    elif e == MM40_INVALID_BPL:
+    elif e == XI_INVALID_BPL:
         return 'Invalid sensor defect correction list'
-    elif e == MM40_BPL_REALLOC:
+    elif e == XI_BPL_REALLOC:
         return 'Error while sensor defect correction list reallocation'
-    elif e == MM40_INVALID_PIXEL_LIST:
+    elif e == XI_INVALID_PIXEL_LIST:
         return 'Invalid pixel list'
-    elif e == MM40_INVALID_FFS:
+    elif e == XI_INVALID_FFS:
         return 'Invalid Flash File System'
-    elif e == MM40_INVALID_PROFILE:
+    elif e == XI_INVALID_PROFILE:
         return 'Invalid profile'
-    elif e == MM40_INVALID_CALIBRATION:
+    elif e == XI_INVALID_CALIBRATION:
         return 'Invalid calibration'
-    elif e == MM40_INVALID_BUFFER:
+    elif e == XI_INVALID_BUFFER:
         return 'Invalid buffer'
-    elif e == MM40_INVALID_DATA:
+    elif e == XI_INVALID_DATA:
         return 'Invalid data'
-    elif e == MM40_TGBUSY:
+    elif e == XI_TGBUSY:
         return 'Timing generator is busy'
-    elif e == MM40_IO_WRONG:
+    elif e == XI_IO_WRONG:
         return 'Wrong operation open/write/read/close'
-    elif e == MM40_ACQUISITION_ALREADY_UP:
+    elif e == XI_ACQUISITION_ALREADY_UP:
         return 'Acquisition already started'
-    elif e == MM40_OLD_DRIVER_VERSION:
+    elif e == XI_OLD_DRIVER_VERSION:
         return 'Old version of device driver installed to the system.'
-    elif e == MM40_GET_LAST_ERROR:
+    elif e == XI_GET_LAST_ERROR:
         return 'To get error code please call GetLastError function.'
-    elif e == MM40_CANT_PROCESS:
+    elif e == XI_CANT_PROCESS:
         return 'Data cannot be processed'
-    elif e == MM40_ACQUISITION_STOPED:
+    elif e == XI_ACQUISITION_STOPED:
         return 'Acquisition is stopped. It needs to be started.'
-    elif e == MM40_ACQUISITION_STOPED_WERR:
+    elif e == XI_ACQUISITION_STOPED_WERR:
         return 'Acquisition has been stopped with an error.'
-    elif e == MM40_INVALID_INPUT_ICC_PROFILE:
+    elif e == XI_INVALID_INPUT_ICC_PROFILE:
         return 'Input ICC profile missing or corrupted'
-    elif e == MM40_INVALID_OUTPUT_ICC_PROFILE:
+    elif e == XI_INVALID_OUTPUT_ICC_PROFILE:
         return 'Output ICC profile missing or corrupted'
-    elif e == MM40_DEVICE_NOT_READY:
+    elif e == XI_DEVICE_NOT_READY:
         return 'Device not ready to operate'
-    elif e == MM40_SHADING_TOOCONTRAST:
+    elif e == XI_SHADING_TOOCONTRAST:
         return 'Shading is too contrast'
-    elif e == MM40_ALREADY_INITIALIZED:
+    elif e == XI_ALREADY_INITIALIZED:
         return 'Module already initialized'
-    elif e == MM40_NOT_ENOUGH_PRIVILEGES:
+    elif e == XI_NOT_ENOUGH_PRIVILEGES:
         return 'Application does not have enough privileges (one or more app)'
-    elif e == MM40_NOT_COMPATIBLE_DRIVER:
+    elif e == XI_NOT_COMPATIBLE_DRIVER:
         return 'Installed driver is not compatible with current software'
-    elif e == MM40_TM_INVALID_RESOURCE:
+    elif e == XI_TM_INVALID_RESOURCE:
         return 'TM file was not loaded successfully from resources'
-    elif e == MM40_DEVICE_HAS_BEEN_RESETED:
+    elif e == XI_DEVICE_HAS_BEEN_RESETED:
         return 'Device has been reset, abnormal initial state'
-    elif e == MM40_NO_DEVICES_FOUND:
+    elif e == XI_NO_DEVICES_FOUND:
         return 'No Devices Found'
-    elif e == MM40_RESOURCE_OR_FUNCTION_LOCKED:
+    elif e == XI_RESOURCE_OR_FUNCTION_LOCKED:
         return 'Resource (device) or function locked by mutex'
-    elif e == MM40_BUFFER_SIZE_TOO_SMALL:
+    elif e == XI_BUFFER_SIZE_TOO_SMALL:
         return 'Buffer provided by user is too small'
-    elif e == MM40_COULDNT_INIT_PROCESSOR:
+    elif e == XI_COULDNT_INIT_PROCESSOR:
         return 'Couldnt initialize processor.'
-    elif e == MM40_NOT_INITIALIZED:
+    elif e == XI_NOT_INITIALIZED:
         return 'The object being referred to has not been started.'
-    elif e == MM40_RESOURCE_NOT_FOUND:
+    elif e == XI_RESOURCE_NOT_FOUND:
         return 'Resource not found.'
+    elif e == XI_UNKNOWN_PARAM:
+        return 'Unknown parameter'
+    elif e == XI_WRONG_PARAM_VALUE:
+        return 'Wrong parameter value'
+    elif e == XI_WRONG_PARAM_TYPE:
+            return 'Wrong parameter type'
+    elif e == XI_WRONG_PARAM_SIZE:
+        return 'Wrong parameter size'
+    elif e == XI_BUFFER_TOO_SMALL:
+            return 'Input buffer is too small'
+    elif e == XI_NOT_SUPPORTED_PARAM:
+        return 'Parameter is not supported'
+    elif e == XI_NOT_SUPPORTED_PARAM_INFO:
+        return 'Parameter info not supported'
+    elif e == XI_NOT_SUPPORTED_DATA_FORMAT:
+        return 'Data format is not supported'
+    elif e == XI_READ_ONLY_PARAM:
+        return 'Read only parameter'
+    elif e == XI_BANDWIDTH_NOT_SUPPORTED:
+        return 'Bandwidth not supported'
+    elif e == XI_INVALID_FFS_FILE_NAME:
+        'FFS file selector is invalid or NULL'
+    elif e == XI_FFS_FILE_NOT_FOUND:
+        return 'FFS file not found'
+    elif e == XI_PARAM_NOT_SETTABLE:
+        return 'Parameter value cannot be set'
+    elif e == XI_SAFE_POLICY_NOT_SUPPORTED:
+        return 'Safe buffer policy is not supported'
+    elif e == XI_GPUDIRECT_NOT_AVAILABLE:
+        return 'GPUDirect is not available'
+    elif e == XI_PROC_OTHER_ERROR:
+        return 'Other processing error'
+    elif e == XI_PROC_PROCESSING_ERROR:
+        return 'Error while image processing'
+    elif e == XI_PROC_INPUT_FORMAT_UNSUPPORTED:
+        return 'Input format is not supported for processing'
+    elif e == XI_PROC_OUTPUT_FORMAT_UNSUPPORTED:
+        return 'Output format is not supported for processing'
+    elif e == XI_OUT_OF_RANGE:
+        return 'Parameter value is out of range'
+    else:
+        return f'Unknown error {e}'
 
 
 cdef class BufWrap:
@@ -578,6 +842,147 @@ cdef class Ximea:
                 raise NotImplementedError(f'Image format {i}')
         else:
             return None
+
+    def get_downsampling(self):
+        cdef int d
+        cdef int t
+
+        if self.dev:
+            check(xiGetParamInt(self.dev, 'downsampling', &d))
+            check(xiGetParamInt(self.dev, 'downsampling_type', &t))
+            if t == XI_BINNING:
+                return (d, 'BINNING')
+            elif t == XI_SKIPPING:
+                return (d, 'SKIPPING')
+            else:
+                raise NotImplementedError(f'Image format {t}')
+        else:
+            return None
+
+    def set_downsampling(self, int d=1, str ds_type='BINNING'):
+        if not self.dev:
+            raise ValueError('Camera not opened')
+        else:
+            if ds_type not in ('BINNING', 'SKIPPING'):
+                raise ValueError(f'Unknown downsampling type {ds_type}')
+
+            check(xiSetParamInt(self.dev, 'downsampling', d))
+            if ds_type == 'BINNING':
+                check(xiSetParamInt(self.dev, 'downsampling_type', XI_BINNING))
+            elif ds_type == 'SKIPPING':
+                check(xiSetParamInt(self.dev, 'downsampling_type', XI_SKIPPING))
+
+    def get_param(self, str name, int bufsize=512):
+        cdef void *buf
+        cdef unsigned long size
+        cdef int type1
+        cdef int ret
+        cdef str p1
+        cdef object obj
+
+        if self.dev:
+            p1 = name.split(':', 1)[0]
+            if p1 not in VAL_TYPE.keys():
+                raise ValueError(f'Unknown parameter {name}')
+            elif bufsize <= 0:
+                raise ValueError(f'bufsize must be positive')
+
+            type1 = VAL_TYPE[p1]
+            buf = malloc(sizeof(char)*bufsize)
+            if buf == NULL:
+                raise MemoryError('get_param')
+            size = bufsize
+
+            # presumably for the future
+            if type1 in (xiTypeEnum, xiTypeBoolean, xiTypeCommand):
+                type1 = xiTypeInteger
+
+            ret = xiGetParam(
+                self.dev, name.encode('utf-8'), buf, &size, &type1)
+            if ret != XI_OK:
+                free(buf)
+                raise Exception(error_string(ret))
+            else:
+                if type1 in (
+                        xiTypeInteger, xiTypeEnum, xiTypeBoolean,
+                        xiTypeCommand):
+                    obj = PyInt_FromLong((<int *>buf)[0])
+                    assert(size == 4)
+                elif type1 == xiTypeFloat:
+                    floatp = <float *>buf
+                    obj = PyFloat_FromDouble((<float *>buf)[0])
+                    assert(size == 4)
+                elif type1 == xiTypeString:
+                    obj = ((<char *>buf)[:size]).decode('utf-8')
+                else:
+                    free(buf)
+                    raise Exception(f'Unknown object type {type1}')
+    
+                free(buf)
+                return obj
+
+    def set_param(self, str name, value):
+        cdef void *buf
+        cdef unsigned long bufsize
+        cdef int type1
+        cdef int ret
+        cdef str p1
+        cdef object obj
+
+        cdef int int1
+        cdef float float1
+        cdef int *intp
+        cdef float *floatp
+        cdef char *charp
+
+        if self.dev:
+            p1 = name.split(':', 1)[0]
+            if p1 not in VAL_TYPE.keys():
+                raise ValueError(f'Unknown parameter {name}')
+
+            type1 = VAL_TYPE[p1]
+            # presumably for the future
+            if type1 in (xiTypeEnum, xiTypeBoolean, xiTypeCommand):
+                type1 = xiTypeInteger
+
+            if type1 in (
+                        xiTypeInteger, xiTypeEnum, xiTypeBoolean,
+                        xiTypeCommand):
+                int1 = int(value)
+                bufsize = sizeof(int)
+                buf = malloc(sizeof(char)*bufsize)
+                if buf == NULL:
+                    raise MemoryError('set_param')
+                intp = <int *>buf
+                intp[0] = int1
+            elif type1 == xiTypeFloat:
+                float1 = <float>float(value)
+                bufsize = sizeof(float)
+                buf = malloc(sizeof(char)*bufsize)
+                if buf == NULL:
+                    raise MemoryError('set_param')
+                floatp = <float *>buf
+                floatp[0] = float1
+            elif type1 == xiTypeString:
+                value = str(value)
+                bufsize = <unsigned long>len(value) + 1
+                buf = malloc(sizeof(char)*bufsize)
+                if buf == NULL:
+                    raise MemoryError('set_param')
+                charp = <char *>buf
+                charp[:len(value)] = (value.encode())[:len(value)]
+                charp[len(value)] = 0
+            else:
+                raise Exception(f'Unknown object type {type1}')
+
+            ret = xiSetParam(
+                self.dev, name.encode('utf-8'), buf, bufsize, type1)
+
+            if ret != XI_OK:
+                free(buf)
+                raise Exception(error_string(ret))
+            else:
+                free(buf)
 
     def start_video(self):
         pass
