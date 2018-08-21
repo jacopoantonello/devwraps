@@ -59,7 +59,10 @@ from .ximead cimport (
     MM40_NOT_INITIALIZED, MM40_RESOURCE_NOT_FOUND,
     xiGetNumberDevices, xiGetDeviceInfoString, XI_OPEN_BY_SN,
     xiOpenDevice, xiOpenDeviceBy, xiCloseDevice, xiGetParamInt, xiSetParamInt,
-    xiGetParamFloat, xiSetParamFloat, xiGetParamString,
+    xiGetParamFloat, xiSetParamFloat, xiGetParamString, XI_MONO8, XI_MONO16,
+    XI_RGB24, XI_RGB32, XI_RGB_PLANAR, XI_RAW8, XI_RAW16,
+    XI_FRM_TRANSPORT_DATA, XI_RGB48, XI_RGB64, XI_RGB16_PLANAR, XI_RAW8X2,
+    XI_RAW8X4, XI_RAW16X2, XI_RAW16X4,
     )
 
 
@@ -70,6 +73,7 @@ cdef extern from "numpy/ndarraytypes.h":
 
 DEF DEBUG = 1
 DEF STRLEN = 1024
+DEF LONGBUF = 1024*1024
 
 cdef check(ret):
     if ret != MM40_OK:
@@ -254,8 +258,30 @@ cdef class Ximea:
 
     cdef void *dev
     cdef list bufwraps
+    cdef dict imgformats
+    cdef tuple imgformats_keys
+    cdef tuple imgformats_vals
 
     def __cinit__(self):
+        self.imgformats = {
+                'MONO8':                XI_MONO8,
+                'MONO16':               XI_MONO16,
+                'RGB24':                XI_RGB24,
+                'RGB32':                XI_RGB32,
+                'RGB_PLANAR':           XI_RGB_PLANAR,
+                'RAW8':                 XI_RAW8,
+                'RAW16':                XI_RAW16,
+                'FRM_TRANSPORT_DATA':   XI_FRM_TRANSPORT_DATA,
+                'RGB48':                XI_RGB48,
+                'RGB64':                XI_RGB64,
+                'RGB16_PLANAR':         XI_RGB16_PLANAR,
+                'RAW8X2':               XI_RAW8X2,
+                'RAW8X4':               XI_RAW8X4,
+                'RAW16X2':              XI_RAW16X2,
+                'RAW16X4':              XI_RAW16X4,
+                }
+        self.imgformats_keys = tuple(self.imgformats.keys())
+        self.imgformats_vals = tuple(self.imgformats.values())
         self.dev = NULL
         self.bufwraps = []
 
@@ -272,7 +298,7 @@ cdef class Ximea:
         
         check(xiGetNumberDevices(&num))
         for i in range(num):
-            check(xiGetDeviceInfoString(i, "device_sn", sn, STRLEN - 1))
+            check(xiGetDeviceInfoString(i, "device_sn", sn, STRLEN))
             devs.append(sn.decode('utf-8'))
 
         return devs
@@ -474,3 +500,93 @@ cdef class Ximea:
             return (f0, f1, f2)
         else:
             return None
+
+    def get_settings(self):
+        """Save camera settings into an string."""
+        cdef char sn[LONGBUF]
+
+        if self.dev:
+            check(xiGetParamString(self.dev, "device_manifest", sn, LONGBUF))
+            return sn.decode('utf-8')
+
+        else:
+            return None
+
+    def get_sensor_bit_depth(self):
+        cdef int i
+
+        if self.dev:
+            check(xiGetParamInt(self.dev, 'sensor_bit_depth', &i))
+            return i
+        else:
+            return 0
+
+    def get_output_bit_depth(self):
+        cdef int i
+
+        if self.dev:
+            check(xiGetParamInt(self.dev, 'output_bit_depth', &i))
+            return i
+        else:
+            return 0
+
+    def get_image_max(self):
+        cdef int i
+
+        if self.dev:
+            check(xiGetParamInt(self.dev, 'output_bit_depth', &i))
+            return 2**i - 1
+        else:
+            return 0
+
+    def get_image_data_format(self):
+        cdef int i
+        cdef int p
+
+        if self.dev:
+            check(xiGetParamInt(self.dev, 'imgdataformat', &i))
+            if i not in self.imgformats_vals:
+                raise NotImplementedError(f'imgdataformat {i}')
+            p = self.imgformats_vals.index(i)
+            return self.imgformats_keys[p]
+        else:
+            return None
+
+    def get_image_data_format_range(self):
+        return self.imgformats_keys
+
+    def set_image_data_format(self, str fmt):
+        cdef int i
+
+        if self.dev:
+            if fmt not in self.imgformats.keys():
+                raise ValueError(f'{fmt} not supported')
+            else:
+                i = self.imgformats[fmt]
+                check(xiSetParamInt(self.dev, 'imgdataformat', i))
+
+    def get_image_dtype(self):
+        cdef int i
+
+        if self.dev:
+            check(xiGetParamInt(self.dev, 'imgdataformat', &i))
+            if i in (XI_RAW8, XI_MONO8, XI_RGB24, XI_RGB32):
+                return 'uint8'
+            elif i in (XI_RAW16, XI_MONO16):
+                return 'uint16'
+            else:
+                raise NotImplementedError(f'Image format {i}')
+        else:
+            return None
+
+    def start_video(self):
+        pass
+
+    def stop_video(self):
+        pass
+
+    def grab_image(self):
+        if not self.opened:
+            return None
+
+        return None

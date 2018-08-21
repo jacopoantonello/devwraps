@@ -63,6 +63,21 @@ cdef extern from "xiApi.h":
     cdef int xiGetParamString(
         void *hDevice, const char* prm, void* val, unsigned int size)
 
+    cdef int XI_MONO8 = 0 # 8 bits per pixel
+    cdef int XI_MONO16 = 1 # 16 bits per pixel
+    cdef int XI_RGB24 = 2 # RGB data format
+    cdef int XI_RGB32 = 3 # RGBA data format
+    cdef int XI_RGB_PLANAR = 4 # RGB planar data format
+    cdef int XI_RAW8 = 5 # 8 bits per pixel raw data from sensor
+    cdef int XI_RAW16 = 6 # 16 bits per pixel raw data from sensor
+    cdef int XI_FRM_TRANSPORT_DATA = 7 # Data from transport layer
+    cdef int XI_RGB48 = 8 # RGB data format
+    cdef int XI_RGB64 = 9 # RGBA data format
+    cdef int XI_RGB16_PLANAR = 10 # RGB16 planar data format
+    cdef int XI_RAW8X2 = 11 # 8 bits per pixel raw data from sensor
+    cdef int XI_RAW8X4 = 12 # 8 bits per pixel raw data from sensor
+    cdef int XI_RAW16X2 = 13 # 16 bits per pixel raw data from sensor
+    cdef int XI_RAW16X4 = 14 # 16 bits per pixel raw data from sensor
 
 cdef extern from "m3ErrorCodes.h":
     cdef int MM40_OK                         =  0
