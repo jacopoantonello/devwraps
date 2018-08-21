@@ -28,7 +28,6 @@ cimport numpy as np
 
 from os import path
 
-from libc.string cimport memset, memcpy
 from libc.stdint cimport uintptr_t
 from libc.stddef cimport wchar_t
 from libc.stdlib cimport free, malloc
