@@ -65,6 +65,10 @@ cdef extern from "xiApi.h":
         unsigned long* size, int *type1)
     cdef int xiSetParam(void *hDevice, const char* prm, void* value,
         unsigned long size, int type1)
+    cdef int xiGetImage(
+        void *hDevice, unsigned long TimeOut, XI_IMG *img)
+    cdef int xiStartAcquisition(void *hDevice)
+    cdef int xiStopAcquisition(void *hDevice)
 
     cdef int xiTypeInteger =0
     cdef int xiTypeFloat = 1
@@ -91,6 +95,65 @@ cdef extern from "xiApi.h":
 
     cdef int XI_BINNING = 0
     cdef int XI_SKIPPING = 1
+
+    cdef int XI_BP_UNSAFE = 0
+    cdef int XI_BP_SAFE = 1
+
+    ctypedef struct XI_IMG_DESC:
+        unsigned long Area0Left
+        unsigned long Area1Left
+        unsigned long Area2Left
+        unsigned long Area3Left
+        unsigned long Area4Left
+        unsigned long Area5Left
+        unsigned long ActiveAreaWidth
+        unsigned long Area5Right
+        unsigned long Area4Right
+        unsigned long Area3Right
+        unsigned long Area2Right
+        unsigned long Area1Right
+        unsigned long Area0Right
+        unsigned long Area0Top
+        unsigned long Area1Top
+        unsigned long Area2Top
+        unsigned long Area3Top
+        unsigned long Area4Top
+        unsigned long Area5Top
+        unsigned long ActiveAreaHeight
+        unsigned long Area5Bottom
+        unsigned long Area4Bottom
+        unsigned long Area3Bottom
+        unsigned long Area2Bottom
+        unsigned long Area1Bottom
+        unsigned long Area0Bottom
+        unsigned long format
+        unsigned long flags
+
+    ctypedef struct XI_IMG:
+        unsigned long size  # Size of current structure
+        void *bp # Pointer to data
+        unsigned long bp_size  # Filled buffer size
+        int frm # Format of image data get from xiGetImage.
+        unsigned long width   # width of incoming image.
+        unsigned long height  # height of incoming image.
+        unsigned long nframe  # Frame number
+        unsigned long tsSec  # Seconds part of timestamp
+        unsigned long tsUSec  # Micro-seconds part of timestamp
+        unsigned long GPI_level  # Levels of digital inputs/outputs
+        unsigned long black_level  # Black level of image (ONLY for MONO/RAW)
+        unsigned long padding_x
+        unsigned long AbsoluteOffsetX
+        unsigned long AbsoluteOffsetY
+        unsigned long transport_frm  # format of pixels on transport layer
+        XI_IMG_DESC img_desc
+        unsigned long DownsamplingX
+        unsigned long DownsamplingY
+        unsigned long flags  # description of XI_IMG.
+        unsigned long exposure_time_us
+        float gain_db  # Gain used for this image in deci-bells
+        unsigned long acq_nframe # Frame number reset by acquisition start
+        unsigned long image_user_data
+        unsigned long exposure_sub_times_us[5]
 
     cdef int XI_OK                         =  0
     cdef int XI_INVALID_HANDLE             =  1

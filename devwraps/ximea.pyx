@@ -28,7 +28,7 @@ cimport numpy as np
 
 from os import path
 
-from libc.string cimport memcpy
+from libc.string cimport memcpy, memset
 from libc.stdint cimport uintptr_t
 from libc.stdlib cimport free, malloc
 from cpython cimport PyObject, Py_INCREF, PyInt_FromLong, PyFloat_FromDouble
@@ -71,8 +71,8 @@ from .ximead cimport (
     xiGetParamFloat, xiSetParamFloat, xiGetParamString, XI_MONO8, XI_MONO16,
     XI_RGB24, XI_RGB32, XI_RGB_PLANAR, XI_RAW8, XI_RAW16,
     XI_FRM_TRANSPORT_DATA, XI_RGB48, XI_RGB64, XI_RGB16_PLANAR, XI_RAW8X2,
-    XI_RAW8X4, XI_RAW16X2, XI_RAW16X4, XI_BINNING, XI_SKIPPING,
-    )
+    XI_RAW8X4, XI_RAW16X2, XI_RAW16X4, XI_BINNING, XI_SKIPPING, xiGetImage,
+    XI_IMG, xiStartAcquisition,  xiStopAcquisition)
 
 
 np.import_array()
@@ -470,34 +470,27 @@ cdef str error_string(int e):
 
 
 cdef class BufWrap:
+    cdef int safe
+    cdef int size
     cdef uintptr_t data
+
     cdef np.npy_intp shape[2]
     cdef np.npy_intp strides[2]
-    cdef int memid
 
-    cdef set_data(self, int size0, int size1, char* data, int memid):
-        """ Set the data of the array
-
-        This cannot be done in the constructor as it must receive C-level
-        arguments.
-
-        Parameters:
-        -----------
-        size: int
-            Length of the array.
-        data: void*
-            Pointer to the data
-
-        """
-        self.data = <uintptr_t>data
-        self.shape[0] = size0
-        self.shape[1] = size1
-        self.strides[0] = size1
-        self.strides[1] = 1
-        self.memid = memid
+    cdef allocate(self, int size, int safe):
+        self.size = size
+        self.safe = safe
+        
+        if self.safe:
+            self.data = <uintptr_t>malloc(size)
+            if not self.data:
+                raise MemoryError('cannot allocate buffer')
+        else:
+            self.sata = 0
 
         if DEBUG:
-            print('BufWrap SET data {:x} memid {:d}'.format(data, memid))
+            print(
+                f'BufWrap alloc {self.data:x} siz:{self.size} saf:{self.safe}')
 
     def __array__(self):
         ndarray = np.PyArray_New(
@@ -507,26 +500,47 @@ cdef class BufWrap:
 
     def __dealloc__(self):
         if DEBUG:
-            print('BufWrap FREE data {:x} memid {:d}'.format(
-                self.data, self.memid))
-        free(<void*>self.data)
+            print(
+                f'BufWrap free {self.data:x} siz:{self.size} saf:{self.safe}')
+        if self.safe:
+            free(<void*>self.data)
 
     def get_data(self):
         return self.data
 
-    def get_memid(self):
-        return self.memid
+    def set_data(self, int data):
+        cdef uintptr_t d
+
+        d = data
+        self.data = d
+
+    def get_size(self):
+        return self.size
+
+    def get_safe(self):
+        return self.safe
 
 
 cdef class Ximea:
 
     cdef void *dev
-    cdef list bufwraps
+
     cdef dict imgformats
     cdef tuple imgformats_keys
     cdef tuple imgformats_vals
+    cdef tuple supported_formats
+
+    cdef list bufwraps
+    cdef int nbufs
+    cdef int safe
+    cdef int lastBufInd
+    cdef int bufdtype
+
+    cdef int liveMode
 
     def __cinit__(self):
+        self.dev = NULL
+
         self.imgformats = {
                 'MONO8':                XI_MONO8,
                 'MONO16':               XI_MONO16,
@@ -546,8 +560,15 @@ cdef class Ximea:
                 }
         self.imgformats_keys = tuple(self.imgformats.keys())
         self.imgformats_vals = tuple(self.imgformats.values())
-        self.dev = NULL
+        self.supported_formats = (
+            XI_MONO8, XI_MONO16, XI_RAW8, XI_RAW16, XI_RAW8X2)
+
         self.bufwraps = []
+        self.safe = 1
+        self.nbufs = 10
+        self.lastBufInd = 0
+        self.bufdtype = 0
+        self.liveMode = 0
 
     def get_number_of_cameras(self):
         cdef unsigned long num
@@ -589,7 +610,50 @@ cdef class Ximea:
 
         assert(self.dev)
 
-        # self._init_bufs()
+        self._init_bufs()
+
+    def _get_dtype(self, int fmt):
+        if fmt in (XI_MONO8, XI_RAW8):
+            return np.NPY_UINT8
+        elif fmt in (XI_MONO16, XI_RAW16, XI_RAW8X2):
+            return np.NPY_UINT16
+        else:
+            raise NotImplementedError(
+                'Format ' +
+                self.imgformats_keys[self.imgformats_vals.index(fmt)] +
+                ' not supported')
+
+    def _init_bufs(self):
+        cdef int size
+        cdef int fmt
+        cdef int ret
+
+        check(xiSetParamInt(self.dev, 'buffer_policy', self.safe))
+
+        if self.safe and self.nbufs < 2:
+            self.nbufs = 2
+        elif not self.safe:
+            self.nbufs = 1
+
+        self.bufwraps.clear()
+
+        check(xiGetParamInt(self.dev, 'imgdataformat', &fmt))
+        if fmt not in self.supported_formats:
+            ret = xiSetParamInt(self.dev, 'imgdataformat',
+                self.imgformats['MONO8'])
+            if ret != XI_OK:
+                raise NotImplementedError(
+                    'Only ' + ', '.join([
+                        self.imgformats_keys[self.imgformats_vals.index(d)]
+                        for d in self.supported_formats]))
+
+        self.bufdtype = self._get_dtype(fmt)
+        
+        check(xiGetParamInt(self.dev, 'imgpayloadsize', &size))
+        for i in range(self.nbufs):
+            bw = BufWrap()
+            bw.allocate(size, self.safe)
+            self.bufwraps.append(bw)
 
     def close(self):
         if self.dev:
@@ -601,7 +665,10 @@ cdef class Ximea:
             #         raise Exception('Error in is_FreeImageMem')
 
             self.bufwraps.clear()
-            # self.lastSeqBuf = NULL
+            self.lastBufInd = 0
+            self.bufdtype = 0
+            self.liveMode = 0
+            self.safe = 1
 
             check(xiCloseDevice(self.dev))
             self.dev = NULL
@@ -794,11 +861,20 @@ cdef class Ximea:
         else:
             return 0
 
+    def get_image_bit_depth(self):
+        cdef int i
+
+        if self.dev:
+            check(xiGetParamInt(self.dev, 'image_data_bit_depth', &i))
+            return i
+        else:
+            return 0
+
     def get_image_max(self):
         cdef int i
 
         if self.dev:
-            check(xiGetParamInt(self.dev, 'output_bit_depth', &i))
+            check(xiGetParamInt(self.dev, 'image_data_bit_depth', &i))
             return 2**i - 1
         else:
             return 0
@@ -824,22 +900,29 @@ cdef class Ximea:
 
         if self.dev:
             if fmt not in self.imgformats.keys():
-                raise ValueError(f'{fmt} not supported')
+                raise ValueError(f'{fmt} not recognised')
             else:
                 i = self.imgformats[fmt]
                 check(xiSetParamInt(self.dev, 'imgdataformat', i))
 
+            self._init_bufs()
+        else:
+            raise ValueError('Camera not opened')
+
     def get_image_dtype(self):
-        cdef int i
+        cdef int fmt
+
+        if DEBUG:
+            check(xiGetParamInt(self.dev, 'imgdataformat', &fmt))
+            assert(self.bufdtype == self._get_dtype(fmt))
 
         if self.dev:
-            check(xiGetParamInt(self.dev, 'imgdataformat', &i))
-            if i in (XI_RAW8, XI_MONO8, XI_RGB24, XI_RGB32):
-                return 'uint8'
-            elif i in (XI_RAW16, XI_MONO16):
+            if self.bufdtype == np.NPY_UINT8:
+                return 'uint8' 
+            elif self.bufdtype == np.NPY_UINT16:
                 return 'uint16'
             else:
-                raise NotImplementedError(f'Image format {i}')
+                raise NotImplementedError(f'Image format {fmt}')
         else:
             return None
 
@@ -871,6 +954,8 @@ cdef class Ximea:
                 check(xiSetParamInt(self.dev, 'downsampling_type', XI_BINNING))
             elif ds_type == 'SKIPPING':
                 check(xiSetParamInt(self.dev, 'downsampling_type', XI_SKIPPING))
+
+            self._init_bufs()
 
     def get_param(self, str name, int bufsize=512):
         cdef void *buf
@@ -984,14 +1069,93 @@ cdef class Ximea:
             else:
                 free(buf)
 
+            self._init_bufs()
+
     def start_video(self):
         pass
 
     def stop_video(self):
         pass
 
-    def grab_image(self):
+    def grab_image(self, int wait=0xffffffff):
+        """Acquire a single image.
+
+        Parameters
+        ----------
+        - `wait`: timeout in milliseconds
+
+        Returns
+        -------
+        - `img`: `numpy` image
+
+        """
+        cdef XI_IMG img
+        cdef int ret
+        cdef int bufsizecheck
+        cdef int safecheck
+        cdef object buf
+        cdef uintptr_t dataptr
+
         if not self.opened:
             return None
+
+        if wait <= 0:
+            wait2 = 0xffffffff
+        else:
+            wait2 = wait
+
+        if not self.liveMode:
+            ret = xiStartAcquisition(self.dev)
+            if ret != XI_OK:
+                xiStopAcquisition(self.dev)
+                self.liveMode = 0
+                self.lastBufInd = 0
+                check(ret)
+
+        memset(&img, 0, sizeof(img))
+        img.size = sizeof(img)
+        if self.safe:
+            buf = self.bufwraps[self.lastBufInd]
+            dataptr = buf.get_data()
+            img.bp = <void *>dataptr
+            img.bp_size = buf.get_size()
+        else:
+            buf = self.bufwraps[0]
+
+        if DEBUG:
+            check(xiGetParamInt(self.dev, 'buffer_policy', &safecheck))
+            check(xiGetParamInt(self.dev, 'imgpayloadsize', &bufsizecheck))
+            assert(bufsizecheck == buf.get_size())
+            assert(self.safe == safecheck)
+            assert(self.safe == buf.get_safe())
+
+        ret = xiGetImage(self.dev, wait2, &img)
+        if ret != XI_OK:
+            xiStopAcquisition(self.dev)
+            self.liveMode = 0
+            self.lastBufInd = 0
+            check(ret)
+
+        if not self.safe:
+            buf.set_data(<uintptr_t>img.bp)
+            if DEBUG:
+                assert(buf.get_size() == img.bp_size)
+
+        buf.set_params(buf.width, buf.height, buf.padding_x, self.bufdtype)
+
+        if not self.liveMode:
+            ret = xiStopAcquisition(self.dev)
+            if ret != XI_OK:
+                self.liveMode = 0
+                self.lastBufInd = 0
+                check(ret)
+
+        if self.safe:
+            self.lastBufInd += 1
+            self.lastBufInd %= self.nbufs
+
+        if DEBUG:
+            assert(self.lastBufInd >= 0)
+            assert(self.lastBufInd <= self.nbufs)
 
         return None
