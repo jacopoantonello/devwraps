@@ -487,7 +487,7 @@ cdef class BufWrap:
             if not self.data:
                 raise MemoryError('cannot allocate buffer')
         else:
-            self.sata = 0
+            self.data = 0
 
         if DEBUG:
             print(
@@ -574,7 +574,7 @@ cdef class Ximea:
             XI_MONO8, XI_MONO16, XI_RAW8, XI_RAW16, XI_RAW8X2)
 
         self.bufwraps = []
-        self.safe = 1
+        self.safe = 0
         self.nbufs = 3
         self.lastBufInd = 0
         self.bufdtype = 0
@@ -1159,13 +1159,12 @@ cdef class Ximea:
 
         if not self.safe:
             buf.set_data(<uintptr_t>img.bp)
-            if DEBUG:
-                assert(buf.get_size() == img.bp_size)
 
         stride0 = img.width*self.bufstride1 + img.padding_x
         buf.set_params(
             img.height, img.width, stride0, self.bufstride1, self.bufdtype)
-        assert(stride0*img.height == img.bp_size)
+        if self.safe:  # not apparently set in unsafe mode
+            assert(stride0*img.height == img.bp_size)
         assert(stride0*img.height == buf.get_size())
 
         if not self.liveMode:
