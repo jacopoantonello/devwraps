@@ -476,6 +476,7 @@ cdef class BufWrap:
 
     cdef np.npy_intp shape[2]
     cdef np.npy_intp strides[2]
+    cdef int dtype
 
     cdef allocate(self, int size, int safe):
         self.size = size
@@ -508,11 +509,19 @@ cdef class BufWrap:
     def get_data(self):
         return self.data
 
-    def set_data(self, int data):
-        cdef uintptr_t d
+    def set_data(self, uintptr_t data):
+        self.data = data
 
-        d = data
-        self.data = d
+    def set_params(
+            self,
+            unsigned long shape0, unsigned long shape1,
+            unsigned long stride0, unsigned long stride1,
+            int dtype):
+        self.shape[0] = shape0
+        self.shape[1] = shape1
+        self.strides[0] = stride0
+        self.strides[1] = stride1
+        self.dtype = dtype
 
     def get_size(self):
         return self.size
@@ -535,6 +544,7 @@ cdef class Ximea:
     cdef int safe
     cdef int lastBufInd
     cdef int bufdtype
+    cdef int bufstride1
 
     cdef int liveMode
 
@@ -565,9 +575,10 @@ cdef class Ximea:
 
         self.bufwraps = []
         self.safe = 1
-        self.nbufs = 10
+        self.nbufs = 3
         self.lastBufInd = 0
         self.bufdtype = 0
+        self.bufstride1 = 0
         self.liveMode = 0
 
     def get_number_of_cameras(self):
@@ -648,6 +659,12 @@ cdef class Ximea:
                         for d in self.supported_formats]))
 
         self.bufdtype = self._get_dtype(fmt)
+        if self.bufdtype == np.NPY_UINT8:
+            self.bufstride1 = 1
+        elif self.bufdtype == np.NPY_UINT16:
+            self.bufstride1 = 2
+        else:
+            raise NotImplementedError(f'Unknown stride for {self.bufstride1}')
         
         check(xiGetParamInt(self.dev, 'imgpayloadsize', &size))
         for i in range(self.nbufs):
@@ -667,6 +684,7 @@ cdef class Ximea:
             self.bufwraps.clear()
             self.lastBufInd = 0
             self.bufdtype = 0
+            self.bufstride1 = 0
             self.liveMode = 0
             self.safe = 1
 
@@ -1095,8 +1113,11 @@ cdef class Ximea:
         cdef int safecheck
         cdef object buf
         cdef uintptr_t dataptr
+        cdef unsigned long stride0
+        cdef unsigned long stride1
+        cdef np.ndarray ndarray
 
-        if not self.opened:
+        if not self.dev:
             return None
 
         if wait <= 0:
@@ -1141,7 +1162,11 @@ cdef class Ximea:
             if DEBUG:
                 assert(buf.get_size() == img.bp_size)
 
-        buf.set_params(buf.width, buf.height, buf.padding_x, self.bufdtype)
+        stride0 = img.width*self.bufstride1 + img.padding_x
+        buf.set_params(
+            img.height, img.width, stride0, self.bufstride1, self.bufdtype)
+        assert(stride0*img.height == img.bp_size)
+        assert(stride0*img.height == buf.get_size())
 
         if not self.liveMode:
             ret = xiStopAcquisition(self.dev)
@@ -1158,4 +1183,8 @@ cdef class Ximea:
             assert(self.lastBufInd >= 0)
             assert(self.lastBufInd <= self.nbufs)
 
-        return None
+        ndarray = np.array(buf, copy=False)
+        ndarray.base = <PyObject*>buf
+        Py_INCREF(buf)
+        
+        return ndarray
