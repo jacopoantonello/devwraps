@@ -81,6 +81,7 @@ cdef extern from "numpy/ndarraytypes.h":
     int NPY_ARRAY_CARRAY_RO
 
 DEF DEBUG = 1
+DEF DEFNBUFS = 10
 DEF STRLEN = 1024
 DEF LONGBUF = 1024*1024
 
@@ -529,6 +530,22 @@ cdef class BufWrap:
     def get_safe(self):
         return self.safe
 
+    def detach(self):
+        cdef uintptr_t olddata
+
+        if not self.safe and self.data != 0:
+            olddata = self.data
+            self.data = 0
+            self.data = <uintptr_t>malloc(self.size)
+            if not self.data:
+                raise MemoryError('cannot allocate buffer')
+            memcpy(<void*>self.data, <const void*>olddata, self.size)
+            self.safe = 1
+            if DEBUG:
+                print(
+                    f'BufWrap det {self.data:x} siz:{self.size} ' +
+                    f'saf:{self.safe}')
+
 
 cdef class Ximea:
 
@@ -575,7 +592,7 @@ cdef class Ximea:
 
         self.bufwraps = []
         self.safe = 0
-        self.nbufs = 3
+        self.nbufs = DEFNBUFS
         self.lastBufInd = 0
         self.bufdtype = 0
         self.bufstride1 = 0
@@ -599,7 +616,7 @@ cdef class Ximea:
 
         return devs
 
-    def open(self, str serial=None):
+    def open(self, str serial=None, int safe=1):
         cdef unsigned long num
 
         if self.dev != NULL and serial is not None:
@@ -620,6 +637,9 @@ cdef class Ximea:
                 XI_OPEN_BY_SN, serial.encode('utf-8'), &self.dev))
 
         assert(self.dev)
+        self.safe = safe
+        if self.safe:
+            self.nbufs = DEFNBUFS
 
         self._init_bufs()
 
@@ -641,12 +661,14 @@ cdef class Ximea:
 
         check(xiSetParamInt(self.dev, 'buffer_policy', self.safe))
 
+        if not self.safe and len(self.bufwraps) == 1:
+            self.bufwraps[0].detach()
+        self.bufwraps.clear()
+
         if self.safe and self.nbufs < 2:
             self.nbufs = 2
         elif not self.safe:
             self.nbufs = 1
-
-        self.bufwraps.clear()
 
         check(xiGetParamInt(self.dev, 'imgdataformat', &fmt))
         if fmt not in self.supported_formats:
@@ -674,19 +696,14 @@ cdef class Ximea:
 
     def close(self):
         if self.dev:
-            # for i in range(len(self.bufwraps)):
-            #     ptr = self.bufwraps[i].get_data()
-            #     ret = is_FreeImageMem(
-            #         self.phCam, <char *>ptr, self.bufwraps[i].get_memid())
-            #     if ret != IS_SUCCESS:
-            #         raise Exception('Error in is_FreeImageMem')
+            if not self.safe and len(self.bufwraps) == 1:
+                self.bufwraps[0].detach()
 
             self.bufwraps.clear()
             self.lastBufInd = 0
             self.bufdtype = 0
             self.bufstride1 = 0
             self.liveMode = 0
-            self.safe = 1
 
             check(xiCloseDevice(self.dev))
             self.dev = NULL
@@ -1090,10 +1107,29 @@ cdef class Ximea:
             self._init_bufs()
 
     def start_video(self):
-        pass
+        if not self.liveMode:
+            if not self.safe and len(self.bufwraps) == 1:
+                self.bufwraps[0].detach()
+            ret = xiStartAcquisition(self.dev)
+            if ret != XI_OK:
+                xiStopAcquisition(self.dev)
+                self.liveMode = 0
+                self.lastBufInd = 0
+                check(ret)
+            else:
+                self.liveMode = 1
 
     def stop_video(self):
-        pass
+        if self.liveMode:
+            if not self.safe and len(self.bufwraps) == 1:
+                self.bufwraps[0].detach()
+            ret = xiStopAcquisition(self.dev)
+            if ret != XI_OK:
+                self.liveMode = 0
+                self.lastBufInd = 0
+                check(ret)
+            else:
+                self.liveMode = 0
 
     def grab_image(self, int wait=0xffffffff):
         """Acquire a single image.

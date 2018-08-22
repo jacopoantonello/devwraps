@@ -169,10 +169,12 @@ def make_ximea(fillout, remove, pkgdata):
         library_dirs=[dir3],
         libraries=['xiapi64'],
     ))
-    # remove.append(r'devwraps\ximea.c')
+    remove.append(r'devwraps\ximea.c')
     for f in [
             'm3ErrorCodes.h', 'm3Identify.h', 'sensorsIdentify.h', 'xiApi.h']:
         remove.append(path.join('devwraps', f))
+    pkgdata.append((
+        r'lib\site-packages\devwraps', [path.join(dir3, 'xiapi64.dll')]))
 
 
 exts = []
