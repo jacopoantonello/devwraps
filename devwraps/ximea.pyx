@@ -496,7 +496,7 @@ cdef class BufWrap:
 
     def __array__(self):
         ndarray = np.PyArray_New(
-            np.ndarray, 2, self.shape, np.NPY_UINT8, self.strides,
+            np.ndarray, 2, self.shape, self.dtype, self.strides,
             <void*>self.data, 0, NPY_ARRAY_CARRAY_RO, 0)
         return ndarray
 
