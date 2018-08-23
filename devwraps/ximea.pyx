@@ -80,7 +80,7 @@ np.import_array()
 cdef extern from "numpy/ndarraytypes.h":
     int NPY_ARRAY_CARRAY_RO
 
-DEF DEBUG = 1
+DEF DEBUG = 0
 DEF DEFNBUFS = 10
 DEF STRLEN = 1024
 DEF LONGBUF = 1024*1024
@@ -947,9 +947,8 @@ cdef class Ximea:
     def get_image_dtype(self):
         cdef int fmt
 
-        if DEBUG:
-            check(xiGetParamInt(self.dev, 'imgdataformat', &fmt))
-            assert(self.bufdtype == self._get_dtype(fmt))
+        check(xiGetParamInt(self.dev, 'imgdataformat', &fmt))
+        assert(self.bufdtype == self._get_dtype(fmt))
 
         if self.dev:
             if self.bufdtype == np.NPY_UINT8:
