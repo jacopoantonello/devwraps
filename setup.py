@@ -43,6 +43,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 PROGFILES = os.environ['PROGRAMFILES']
+WINDIR = os.environ['WINDIR']
 
 
 def lookup_version():
@@ -141,6 +142,41 @@ def make_sdk3(fillout, remove, pkgdata):
     remove.append(r'devwraps\sdk3.c')
 
 
+def make_ximea(fillout, remove, pkgdata):
+    dir1 = None
+    for p in [
+            path.join(PROGFILES, r'XIMEA'),
+            path.join(path.join(PROGFILES, path.pardir), r'XIMEA')]:
+        if path.isdir(p):
+            dir1 = p
+            break
+    if dir1 is None:
+        return
+
+    dir2 = path.join(dir1, r'API')
+    dir3 = path.join(dir2, r'x64')
+
+    for f in ['m3ErrorCodes.h', 'm3Identify.h', 'sensorsIdentify.h']:
+        copyfile(path.join(dir2, f), path.join('devwraps', f))
+    with open(path.join(dir2, 'xiApi.h'), 'r') as f:
+        incl = f.read().replace('WIN32', '_WIN64')
+    with open(path.join('devwraps', 'xiApi.h'), 'w') as f:
+        f.write(incl)
+
+    fillout.append(Extension(
+        'devwraps.ximea', [r'devwraps\ximea.pyx'],
+        include_dirs=[r'devwraps', numpy.get_include(), dir2],
+        library_dirs=[dir3],
+        libraries=['xiapi64'],
+    ))
+    remove.append(r'devwraps\ximea.c')
+    for f in [
+            'm3ErrorCodes.h', 'm3Identify.h', 'sensorsIdentify.h', 'xiApi.h']:
+        remove.append(path.join('devwraps', f))
+    pkgdata.append((
+        r'lib\site-packages\devwraps', [path.join(dir3, 'xiapi64.dll')]))
+
+
 exts = []
 remove = []
 pkgdata = []
@@ -148,6 +184,7 @@ make_ciusb(exts, remove, pkgdata)
 make_bmc(exts, remove, pkgdata)
 make_thorcam(exts, remove, pkgdata)
 make_sdk3(exts, remove, pkgdata)
+make_ximea(exts, remove, pkgdata)
 names = [e.name for e in exts]
 if len(names) == 0:
     raise ValueError('No drivers found')

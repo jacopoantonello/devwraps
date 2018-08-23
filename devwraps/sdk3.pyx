@@ -660,10 +660,10 @@ cdef class SDK3:
             return None
 
     def get_pixel_size(self):
-        "Get pixel size (width, height) in um."
+        "Get pixel size (height, width) in um."
         cdef double d1
         cdef double d2
-        cdef atwc *setting1 = 'PixelWidth'
+        cdef atwc *setting1 = 'PixelHeight'
         cdef atwc *setting2 = 'PixelWidth'
 
         if self.check_opened():

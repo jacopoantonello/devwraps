@@ -30,7 +30,6 @@ cimport numpy as np
 from os import path
 from tempfile import NamedTemporaryFile
 
-from libc.string cimport memset, memcpy
 from libc.stdint cimport uintptr_t
 from libc.stddef cimport wchar_t
 from libc.stdlib cimport free, malloc
@@ -845,7 +844,7 @@ cdef class ThorCam:
             return None
 
     def get_pixel_size(self):
-        "Get pixel size (width, height) in um."
+        "Get pixel size (height, width) in um."
 
         if self.phCam:
             return (self.info.wPixelSize/100, self.info.wPixelSize/100)
