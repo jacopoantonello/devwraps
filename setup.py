@@ -127,6 +127,34 @@ def make_thorcam(fillout, remove, pkgdata):
     pkgdata.append((r'lib\site-packages\devwraps', [path.join(PROGFILES, p2)]))
 
 
+def make_ueye(fillout, remove, pkgdata):
+    p1 = r'IDS\uEye\Develop'
+    p2 = r'IDS\uEye\USB driver package\ueye_api_64.dll'
+    dir1 = path.join(PROGFILES, p1, r'Include')
+    dir2 = path.join(PROGFILES, p1, r'Lib')
+    pristine = path.join(dir1, 'uEye.h')
+    patched = path.join(r'devwraps', 'uEye.h')
+
+    if not path.isdir(dir1) or not path.isdir(dir2):
+        return
+
+    with open(pristine, 'r') as f:
+        incl = f.read()
+    incl = re.sub(r'extern "C" __declspec', r'extern __declspec', incl, 2)
+    with open(patched, 'w') as f:
+        f.write(incl)
+
+    fillout.append(Extension(
+        'devwraps.ueye', [r'devwraps\ueye.pyx'],
+        include_dirs=[r'devwraps', numpy.get_include()],
+        library_dirs=[dir2],
+        libraries=['ueye_api_64'],
+    ))
+    remove.append(patched)
+    remove.append(r'devwraps\ueye.c')
+    pkgdata.append((r'lib\site-packages\devwraps', [path.join(PROGFILES, p2)]))
+
+
 def make_sdk3(fillout, remove, pkgdata):
     dir1 = path.join(PROGFILES, r'Andor SDK3')
 
@@ -183,6 +211,7 @@ pkgdata = []
 make_ciusb(exts, remove, pkgdata)
 make_bmc(exts, remove, pkgdata)
 make_thorcam(exts, remove, pkgdata)
+make_ueye(exts, remove, pkgdata)
 make_sdk3(exts, remove, pkgdata)
 make_ximea(exts, remove, pkgdata)
 names = [e.name for e in exts]
