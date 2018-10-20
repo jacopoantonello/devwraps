@@ -33,36 +33,21 @@ Function Test-RegistryValue {
             }
         }
 }
-Function Run-Python {
-    param(
-            [Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
-            [String]$Cmd
-         ) 
-	process {
-		
-		if (Test-RegistryValue -Path $path1 -Name $value) {
-				$p = (Test-RegistryValue -PassThru -Path $path1 -Name $value).$value
-				iex "& $p $cmd"
-		} elseif (Test-RegistryValue -Path $path2 -Name $value) {
-				$p = (Test-RegistryValue -PassThru -Path $path2 -Name $value).$value
-				iex "& $p $cmd"
-		} else {
-				Write-Error $python_not_found -ErrorAction Stop
-		}
-	}
-}
 Function Activate-Anaconda {
 	process {
+		$p = $false
 		if (Test-RegistryValue -Path $path1 -Name $value) {
 				$p = (Test-RegistryValue -PassThru -Path $path1 -Name $value).$value
-				$p = (Split-Path -Parent -Path $p)
-				$env:Path = "$p;$p\Scripts;" + $env:Path
-				activate.bat $p
 		} elseif (Test-RegistryValue -Path $path2 -Name $value) {
 				$p = (Test-RegistryValue -PassThru -Path $path2 -Name $value).$value
+		}
+
+		if ($p) {
 				$p = (Split-Path -Parent -Path $p)
-				$env:Path = "$p;$p\Scripts;" + $env:Path
-				activate.bat $p
+				# https://github.com/BCSharp/PSCondaEnvs
+				$env:Path = "$p;$p\Library\mingw-w64\bin;$p\Library\usr\bin;$p\Library\bin;$p\Scripts;$p\bin;" + $env:Path
+				$env:CONDA_DEFAULT_ENV = "root"
+				$env:CONDA_PREFIX = $p
 		} else {
 				Write-Error $python_not_found -ErrorAction Stop
 		}
