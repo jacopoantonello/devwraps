@@ -110,7 +110,7 @@ def make_asdk(fillout, remove, pkgdata):
         library_dirs=[dl],
         libraries=['ASDK']
     ))
-    remove.append(r'devwraps\asdk.cpp')
+    remove.append(r'devwraps\asdk.c')
 
 
 def make_ciusb(fillout, remove, pkgdata):
@@ -270,12 +270,12 @@ exts = []
 remove = []
 pkgdata = []
 make_asdk(exts, remove, pkgdata)
-# make_ciusb(exts, remove, pkgdata)
-# make_bmc(exts, remove, pkgdata)
-# make_thorcam(exts, remove, pkgdata)
-# make_ueye(exts, remove, pkgdata)
-# make_sdk3(exts, remove, pkgdata)
-# make_ximea(exts, remove, pkgdata)
+make_ciusb(exts, remove, pkgdata)
+make_bmc(exts, remove, pkgdata)
+make_thorcam(exts, remove, pkgdata)
+make_ueye(exts, remove, pkgdata)
+make_sdk3(exts, remove, pkgdata)
+make_ximea(exts, remove, pkgdata)
 names = [e.name for e in exts]
 if len(names) == 0:
     raise ValueError('No drivers found')

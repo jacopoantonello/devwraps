@@ -39,7 +39,7 @@ from libc.stdlib cimport malloc, free
 
 from .asdkd cimport (
     asdkDM, UInt, Scalar, asdkInit, asdkReset, asdkRelease, COMPL_STAT,
-    asdkGet, SUCCESS)
+    asdkGet, SUCCESS, asdkSend)
 
 
 np.import_array()
@@ -52,7 +52,7 @@ cdef class ASDK:
     cdef char serial_number[MAX_SERIAL_NUMBER]
     cdef int opened
     cdef Scalar *doubles
-    # cdef object transform
+    cdef object transform
 
     def __cinit__(self):
         memset(self.serial_number, 0, MAX_SERIAL_NUMBER)
@@ -165,3 +165,100 @@ cdef class ASDK:
             return self.nacts
         else:
             raise Exception('dm not opened')
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def write(self, np.ndarray[double, ndim=1] array not None):
+        """Write actuators.
+
+        This function writes raw voltage values to the DM driver. No conversion
+        is applied. The input array should contain voltages in the range [-1,
+        1].
+
+        Parameters
+        ----------
+        - `array`: `numpy` actuator values in the range [-1, 1]
+
+        """
+
+        cdef unsigned int i
+        cdef double val
+        cdef COMPL_STAT ret
+
+        if self.transform is not None:
+            array = self.transform(array)
+
+        if not self.opened:
+            raise Exception('DM not opened')
+        elif not isinstance(array, np.ndarray):
+            raise Exception('array must be numpy.ndarray')
+        elif array.ndim != 1:
+            raise Exception('array must be a vector')
+        elif array.size != self.nacts:
+            raise Exception(f'array.size must be {self.nacts}')
+        elif array.dtype != np.float64:
+            raise Exception('array.dtype must be np.float64')
+
+        for i in range(self.nacts):
+            val = array[i]
+
+            if val > 1.0:
+                val = 1.0
+            elif val < -1.0:
+                val = -1.0
+
+            self.doubles[i] = val
+
+        ret = asdkSend(self.dm, self.doubles);
+        if ret != SUCCESS:
+            raise ValueError('Error in write')
+
+    def preset(self, name, mag=0.7):
+        u = np.zeros((140,))
+        if name == 'centre':
+            u[34] = mag
+        elif name == 'cross':
+            inds = np.array([
+                2, 8, 16, 25, 34, 43, 52, 60, 66,
+                30, 31, 32, 33, 35, 36, 37, 38])
+            u[inds] = mag
+        elif name == 'x':
+            inds = np.array([
+                11, 18, 26, 34, 42, 50, 57,
+                5, 14, 24, 44, 54, 63])
+            u[inds] = mag
+        elif name == 'rim':
+            inds = np.array([
+                6, 7, 8, 9, 10,
+                19, 28, 37, 46, 55,
+                62, 61, 60, 59, 58,
+                49, 48, 31, 22, 13])
+            u[inds] = mag
+        elif name == 'checker':
+            c = 0
+            s = mag
+            inds = np.kron(
+                [0, 1], np.ones(1, self.size()//2)).astype(np.bool)
+            u[inds[:u.size]] = 1
+        elif name == 'arrows':
+            inds = np.array([
+                11, 18,  9, 17, 26, 27, 28,
+                16, 15, 14, 23, 32, 24, 34, 44, 54,
+                42, 50, 59, 51, 52, 53
+                ])
+            u[inds] = mag
+        else:
+            raise NotImplementedError(name)
+        return u
+
+    def get_transform(self):
+        return self.transform
+
+    def set_transform(self, tx):
+        self.transform = tx
+
+    def get_serial_number(self):
+        if self.opened:
+            return self.serial_number.decode('utf-8')
+        else:
+            return None
