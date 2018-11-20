@@ -96,6 +96,23 @@ def lookup_version():
     return m.group(1)
 
 
+def make_asdk(fillout, remove, pkgdata):
+    dir1 = path.join(PROGFILES, r'Alpao\SDK')
+    dl = path.join(dir1, r'Lib\x64')
+    di = path.join(dir1, r'Include')
+
+    if not path.isdir(dl) or not path.isdir(di):
+        return
+
+    fillout.append(Extension(
+        'devwraps.asdk', [r'devwraps\asdk.pyx'],
+        include_dirs=[r'devwraps', numpy.get_include(), di],
+        library_dirs=[dl],
+        libraries=['ASDK']
+    ))
+    remove.append(r'devwraps\asdk.cpp')
+
+
 def make_ciusb(fillout, remove, pkgdata):
     dir1 = path.join(PROGFILES, r'Boston Micromachines\Usb\CIUsbLib')
     f1 = path.join(
@@ -109,7 +126,7 @@ def make_ciusb(fillout, remove, pkgdata):
     copyfile(f1, dst)
     fillout.append(Extension(
         'devwraps.ciusb', [r'devwraps\ciusb.pyx', r'devwraps\cciusb.cpp'],
-        include_dirs=[r'ciusb', numpy.get_include(), dir1],
+        include_dirs=[r'devwraps', numpy.get_include(), dir1],
         library_dirs=[dir1],
         libraries=['CIUsbLib'],
         language='c++',
@@ -252,12 +269,13 @@ def make_ximea(fillout, remove, pkgdata):
 exts = []
 remove = []
 pkgdata = []
-make_ciusb(exts, remove, pkgdata)
-make_bmc(exts, remove, pkgdata)
-make_thorcam(exts, remove, pkgdata)
-make_ueye(exts, remove, pkgdata)
-make_sdk3(exts, remove, pkgdata)
-make_ximea(exts, remove, pkgdata)
+make_asdk(exts, remove, pkgdata)
+# make_ciusb(exts, remove, pkgdata)
+# make_bmc(exts, remove, pkgdata)
+# make_thorcam(exts, remove, pkgdata)
+# make_ueye(exts, remove, pkgdata)
+# make_sdk3(exts, remove, pkgdata)
+# make_ximea(exts, remove, pkgdata)
 names = [e.name for e in exts]
 if len(names) == 0:
     raise ValueError('No drivers found')
