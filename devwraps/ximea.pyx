@@ -811,6 +811,9 @@ cdef class Ximea:
         if self.dev:
             check(xiGetParamString(self.dev, 'device_name', sn, STRLEN))
             sn1 = sn.decode('utf-8')
+            if sn1.endswith('-UB'):
+                sn1 = sn1.rstrip('-UB')
+
             if sn1 in ['MQ003MG-CM', 'MQ003CG-CM']:
                 return (7.4, 7.4)
             elif sn1 in ['MQ013MG-E2', 'MQ013CG-E2', 'MQ013RG-E2']:
@@ -821,6 +824,15 @@ cdef class Ximea:
                     'MQ022MG-CM', 'MQ022CG-CM', 'MQ022RG-CM',
                     'MQ042MG-CM', 'MQ042CG-CM', 'MQ042RG-CM']:
                 return (5.5, 5.5)
+            elif sn1 in [
+                    'MC023MG-SY', 'MC023CG-SY']:
+                return (5.86, 5.86)
+            elif sn1 in [
+                    'MC031MG-SY', 'MC031CG-SY', 'MC050MG-SY',
+                    'MC050CG-SY', 'MC089MG-SY', 'MC089CG-SY',
+                    'MC124MG-SY', 'MC124CG-SY'
+                    ]:
+                return (3.45, 3.45)
             else:
                 raise ValueError(f'Unknown pixel size for model {sn1}')
         else:
@@ -1200,7 +1212,7 @@ cdef class Ximea:
             img.height, img.width, stride0, self.bufstride1, self.bufdtype)
         if self.safe:  # not apparently set in unsafe mode
             assert(stride0*img.height == img.bp_size)
-        assert(stride0*img.height == buf.get_size())
+        assert(stride0*img.height <= buf.get_size())
 
         if not self.liveMode:
             ret = xiStopAcquisition(self.dev)
