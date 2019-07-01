@@ -17,6 +17,8 @@ Download and install the manufacturer drivers. Then install the following compon
 * [Anaconda](https://www.anaconda.com/download)
 * [Build Tools](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017)
 * [ATL](https://docs.microsoft.com/en-us/cpp/mfc/mfc-and-atl) (obsolete and required for `ciusb` only)
+* [Git](https://git-scm.com/download/win)
+	- NB: Make sure you choose "Git from the command line and also 3rd-party software" in "Adjusting your PATH environment"
 
 Double click on `install.bat`.
 

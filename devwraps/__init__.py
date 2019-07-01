@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-__author__ = 'Jacopo Antonello'
-__copyright__ = 'Copyright 2018, Jacopo Antonello'
-__license__ = 'GPLv3+'
-__version__ = '0.0.4'
-__email__ = 'jacopo.antonello@dpag.ox.ac.uk'
-__status__ = 'Beta'
-__doc__ = """devwraps - some device wrappers for Python 3
+from devwraps import version
 
-    Version {}
-""".format(__version__)
+__author__ = 'Jacopo Antonello'
+__copyright__ = 'Copyright 2018-2019, Jacopo Antonello'
+__license__ = 'GPLv3+'
+__email__ = 'jacopo@antonello.org'
+__status__ = 'Beta'
+__doc__ = f"""
+devwraps - some device wrappers for Python 3
+
+author:  {__author__}
+date:    {version.__date__}
+version: {version.__version__}
+commit:  {version.__commit__}
+"""

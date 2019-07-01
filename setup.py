@@ -27,10 +27,13 @@
 # python setup.py build_ext --inplace
 
 
+import sys
 import os
 import numpy
 import re
+import subprocess
 
+from subprocess import check_output
 from os import path
 from shutil import copyfile
 from setuptools import setup
@@ -46,8 +49,49 @@ PROGFILES = os.environ['PROGRAMFILES']
 WINDIR = os.environ['WINDIR']
 
 
+def update_version():
+    try:
+        check_output('git --version', universal_newlines=True, shell=True)
+    except Exception:
+        raise RuntimeError(
+            'Git must be installed and added to the PATH ' +
+            '(https://stackoverflow.com/questions/19290899)')
+
+    try:
+        subprocess.call(['git', 'config', 'core.autocrlf', 'true'])
+        subprocess.call(['git', 'config', 'core.fileMode', 'false'])
+        toks = check_output(
+            'git describe --tags --long --dirty', universal_newlines=True,
+            shell=True).strip().split('-')
+        version = toks[0].strip('v') + '+' + toks[1] + '.' + toks[2]
+        if toks[-1] == 'dirty':
+            version += '.dirty'
+        last = check_output(
+            'git log -n 1', universal_newlines=True, shell=True)
+        date = re.search(
+            r'^Date:\s+([^\s].*)$', last, re.MULTILINE).group(1)
+        commit = re.search(
+            r'^commit\s+([^\s]{40})', last, re.MULTILINE).group(1)
+
+        with open(
+                path.join('devwraps', 'version.py'), 'w', newline='\n') as f:
+            f.write('#!/usr/bin/env python3\n')
+            f.write('# -*- coding: utf-8 -*-\n\n')
+            f.write(f"__version__ = '{version}'\n")
+            f.write(f"__date__ = '{date}'\n")
+            f.write(f"__commit__ = '{commit}'")
+        subprocess.call(['git', 'config', '--unset', 'core.autocrlf'])
+        subprocess.call(['git', 'config', '--unset', 'core.fileMode'])
+    except Exception as e:
+        print(f'Cannot update version: {str(e)}', file=sys.stderr)
+        print('Is Git installed?', file=sys.stderr)
+
+
+update_version()
+
+
 def lookup_version():
-    with open(os.path.join('devwraps', '__init__.py'), 'r') as f:
+    with open(os.path.join('devwraps', 'version.py'), 'r') as f:
         m = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", f.read(), re.M)
     return m.group(1)
 
@@ -224,7 +268,7 @@ setup(
     version=lookup_version(),
     description='Python wrappers for deformable mirrors and cameras',
     long_description=long_description,
-    url='',
+    url='https://github.com/jacopoantonello/devwraps',
     author='Jacopo Antonello',
     author_email='jacopo@antonello.org',
     license='GPLv3+',
