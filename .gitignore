@@ -8,3 +8,4 @@ devwraps.egg-info/
 dist/
 *.pyd
 __pycache__/
+/devwraps/version.py
