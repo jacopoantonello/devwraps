@@ -4,7 +4,7 @@
 #cython: embedsignature=True
 
 # devwraps - some device wrappers for Python
-# Copyright 2018 J. Antonello <jacopo.antonello@dpag.ox.ac.uk>
+# Copyright 2018-2019 J. Antonello <jacopo@antonello.org>
 #
 # This file is part of devwraps.
 #

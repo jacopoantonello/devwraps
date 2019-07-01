@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # devwraps - some device wrappers for Python
-# Copyright 2018 J. Antonello <jacopo.antonello@dpag.ox.ac.uk>
+# Copyright 2018-2019 J. Antonello <jacopo@antonello.org>
 #
 # This file is part of devwraps.
 #
@@ -226,7 +226,7 @@ setup(
     long_description=long_description,
     url='',
     author='Jacopo Antonello',
-    author_email='jacopo.antonello@dpag.ox.ac.uk',
+    author_email='jacopo@antonello.org',
     license='GPLv3+',
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -249,4 +249,4 @@ try:
 except OSError:
     pass
 
-print('installed extensions are {}'.format(', '.join(names)))
+print(f'installed extensions are {", ".join(names)}')
