@@ -5,8 +5,12 @@ Some device wrappers for Python 3.
 ### Supported devices
 * [Boston Micromachines](http://www.bostonmicromachines.com/)
   - Multi-DM (`ciusb`, `bmc`)
+* [ALPAO](https://www.alpao.com/)
+  - (`asdk`)
 * [Thorlabs cameras](https://www.thorlabs.com/software_pages/ViewSoftwarePage.cfm?Code=ThorCam)
   - Grayscale devices (`thorcam`)
+* [IDS cameras](https://en.ids-imaging.com/)
+  - Grayscale devices (`ueye`)
 * [Andor cameras](http://www.andor.com/scientific-software/software-development-kit)
   - Grayscale devices (`sdk3`)
 * [Ximea cameras](https://www.ximea.com/)
@@ -23,5 +27,6 @@ Download and install the manufacturer drivers. Then install the following compon
 Double click on `install.bat`.
 
 ### Known bugs
-* timeout error handling in `grab_image()`
+* `asdk` mostly untested
+* timeout error handling in `grab_image()` is incomplete
 * continuous acquisition (`start_video()` and `stop_video()`) mostly untested
