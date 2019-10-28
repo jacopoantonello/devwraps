@@ -201,7 +201,7 @@ def make_ueye(fillout, remove, pkgdata):
 
     with open(pristine, 'r') as f:
         incl = f.read()
-    incl = re.sub(r'extern "C" __declspec', r'extern __declspec', incl, 2)
+    incl = re.sub(r'extern "C" __declspec', r'extern __declspec', incl)
     with open(patched, 'w') as f:
         f.write(incl)
 
