@@ -8,13 +8,13 @@ support for some scientific cameras and deformable mirrors.
   - Multi-DM (`bmc`)
 * [ALPAO](https://www.alpao.com/) deformable mirrors
   - (`asdk`)
-* [Thorlabs cameras](https://www.thorlabs.com/software_pages/ViewSoftwarePage.cfm?Code=ThorCam) scientific cameras
+* [Thorlabs](https://www.thorlabs.com/software_pages/ViewSoftwarePage.cfm?Code=ThorCam) scientific cameras
   - Grayscale devices (`thorcam`)
-* [IDS cameras](https://en.ids-imaging.com/) scientific cameras
+* [IDS](https://en.ids-imaging.com/) scientific cameras
   - Grayscale devices (`ueye`)
-* [Andor cameras](http://www.andor.com/scientific-software/software-development-kit) scientific cameras
+* [Andor](http://www.andor.com/scientific-software/software-development-kit) scientific cameras
   - Grayscale devices (`sdk3`)
-* [Ximea cameras](https://www.ximea.com/) scientific cameras
+* [Ximea](https://www.ximea.com/) scientific cameras
   - Grayscale devices (`ximea`)
 
 ### Install
