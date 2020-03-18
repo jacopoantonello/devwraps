@@ -33,6 +33,7 @@ import numpy
 import re
 import subprocess
 
+from glob import glob
 from subprocess import check_output
 from os import path
 from shutil import copyfile
@@ -141,12 +142,17 @@ def make_bmc(fillout, remove, pkgdata):
 
     if not path.isdir(dir1) or not path.isdir(dir2):
         return
-    if path.isfile(path.join(dir1, 'BMC2.lib')):
-        libname = 'BMC2'
-    elif path.isfile(path.join(dir1, 'BMC3.lib')):
-        libname = 'BMC3'
+
+    libname = None
+    for p in glob(path.join(dir1, 'BMC*.lib')):
+        m = re.search(r'BMC[0-9]*\.lib', p)
+        if m is not None:
+            libname = p
+            break
+    if not path.isfile(libname):
+        raise RuntimeError('Cannot find BMC*.lib')
     else:
-        return
+        libname = path.basename(libname).replace('.lib', '')
 
     fillout.append(Extension(
         'devwraps.bmc', [r'devwraps\bmc.pyx'],
@@ -243,7 +249,14 @@ def make_ximea(fillout, remove, pkgdata):
         return
 
     dir2 = path.join(dir1, r'API')
-    dir3 = path.join(dir2, r'x64')
+    dllpath = None
+    for t in (r'x64', '64bit'):
+        tmp = path.join(dir2, t)
+        if path.isdir(tmp):
+            dllpath = tmp
+            break
+    if dllpath is None:
+        raise RuntimeError(f'Cannot find xiapi64.dll location')
 
     for f in ['m3ErrorCodes.h', 'm3Identify.h', 'sensorsIdentify.h']:
         copyfile(path.join(dir2, f), path.join('devwraps', f))
@@ -255,7 +268,7 @@ def make_ximea(fillout, remove, pkgdata):
     fillout.append(Extension(
         'devwraps.ximea', [r'devwraps\ximea.pyx'],
         include_dirs=[r'devwraps', numpy.get_include(), dir2],
-        library_dirs=[dir3],
+        library_dirs=[dllpath],
         libraries=['xiapi64'],
     ))
     remove.append(r'devwraps\ximea.c')
@@ -263,12 +276,21 @@ def make_ximea(fillout, remove, pkgdata):
             'm3ErrorCodes.h', 'm3Identify.h', 'sensorsIdentify.h', 'xiApi.h']:
         remove.append(path.join('devwraps', f))
     pkgdata.append((
-        r'lib\site-packages\devwraps', [path.join(dir3, 'xiapi64.dll')]))
+        r'lib\site-packages\devwraps', [path.join(dllpath, 'xiapi64.dll')]))
 
 
 exts = []
 remove = []
 pkgdata = []
+for g in glob('devwraps\\*.pyx'):
+    fname = g.replace('.pyx', '.c')
+    try:
+        for f in remove:
+            print(f'rm {f}')
+            os.remove(f)
+    except OSError:
+        print(f'error {f}')
+        pass
 make_asdk(exts, remove, pkgdata)
 make_ciusb(exts, remove, pkgdata)
 make_bmc(exts, remove, pkgdata)
@@ -278,7 +300,7 @@ make_sdk3(exts, remove, pkgdata)
 make_ximea(exts, remove, pkgdata)
 names = [e.name for e in exts]
 if len(names) == 0:
-    raise ValueError('No drivers found')
+    raise ValueError('No device driver was found')
 
 
 setup(
