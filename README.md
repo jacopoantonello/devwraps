@@ -1,7 +1,6 @@
 # devwraps
 
-A collection of device wrappers for Python 3 in Windows. This library includes
-support for some scientific cameras and deformable mirrors.
+A collection of device wrappers for Python 3 in Windows. This library includes support for some scientific cameras and deformable mirrors.
 
 ### Supported devices
 * [Boston Micromachines](http://www.bostonmicromachines.com/) deformable mirrors
@@ -18,15 +17,13 @@ support for some scientific cameras and deformable mirrors.
   - Grayscale devices (`ximea`)
 
 ### Install
-Download and install some of the manufacturer drivers above. Then install the
-following requirements:
-* [Anaconda](https://www.anaconda.com/download)
-* [Build Tools for Visual Studio](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017)
-	- NB: these are the tools to build Visual Studio projects from a command-line, not the full Visual Studio
-* [Git](https://git-scm.com/download/win)
-	- NB: Make sure you choose "Git from the command line and also 3rd-party software" in "Adjusting your PATH environment"
-
-Double click on `install.bat`.
+* Download and install the drivers for the devices you want to use from the ones listed above. Make sure to install the development API in case this is optional.
+* You should then install the following software requirements:
+    * [Anaconda for Python 3](https://www.anaconda.com/download). This includes Python as well as some necessary scientific libraries.
+    * [Build Tools for Visual Studio](https://go.microsoft.com/fwlink/?linkid=840931). Note that this is not *Visual Studio* ifself, but the command-line interface *Build Tools for Visual Studio 2019*. You can find that under *Tools for Visual Studio*.
+    * [Git](https://git-scm.com/download/win). This is necessary for the automatic version numbering of this package. Also make sure you choose *Git from the command line and also 3rd-party software* in *Adjusting your PATH environment*.
+* *Clone* this repository using Git. Do not use GitHub's *Download ZIP* button above.
+* Finally double-click on `install.bat`.
 
 ### Known bugs
 * `asdk` and `sdk3` are mostly untested
