@@ -1142,12 +1142,14 @@ cdef class Ximea:
             else:
                 self.liveMode = 0
 
-    def grab_image(self, int wait=0xffffffff):
+    def grab_image(self, int wait=0xffffffff, copy=True):
         """Acquire a single image.
 
         Parameters
         ----------
         - `wait`: timeout in milliseconds
+        - `copy`: return a copy of the image otherwise a reference may be
+          returned instead.
 
         Returns
         -------
@@ -1229,7 +1231,7 @@ cdef class Ximea:
             assert(self.lastBufInd >= 0)
             assert(self.lastBufInd <= self.nbufs)
 
-        ndarray = np.array(buf, copy=False)
+        ndarray = np.array(buf, copy=copy)
         ndarray.base = <PyObject*>buf
         Py_INCREF(buf)
         

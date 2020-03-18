@@ -477,12 +477,14 @@ cdef class SDK3:
             check_return(AT_Command(self.handle, 'AcquisitionStop'))
             self.liveMode = 0
 
-    def grab_image(self, int wait=AT_INFINITE):
+    def grab_image(self, int wait=AT_INFINITE, copy=True):
         """Acquire a single image.
 
         Parameters
         ----------
         - `wait`: timeout in milliseconds
+        - `copy`: return a copy of the image otherwise a reference may be
+          returned instead.
 
         Returns
         -------
@@ -535,7 +537,7 @@ cdef class SDK3:
 
         self.lastSeqBuf = i
 
-        ndarray = np.array(aw, copy=False)
+        ndarray = np.array(aw, copy=copy)
         ndarray.base = <PyObject*>aw
         Py_INCREF(aw)
 
