@@ -80,7 +80,7 @@ def update_version():
             f.write('# -*- coding: utf-8 -*-\n\n')
             f.write(f"__version__ = '{version}'\n")
             f.write(f"__date__ = '{date}'\n")
-            f.write(f"__commit__ = '{commit}'")
+            f.write(f"__commit__ = '{commit}'\n")
         subprocess.call(['git', 'config', '--unset', 'core.autocrlf'])
         subprocess.call(['git', 'config', '--unset', 'core.fileMode'])
     except Exception as e:
@@ -112,6 +112,8 @@ def make_asdk(fillout, remove, pkgdata):
         libraries=['ASDK']
     ))
     remove.append(r'devwraps\asdk.c')
+    pkgdata.append((
+        r'lib\site-packages\devwraps', [path.join(dl, 'ASDK.dll')]))
 
 
 def make_ciusb(fillout, remove, pkgdata):
@@ -139,6 +141,7 @@ def make_ciusb(fillout, remove, pkgdata):
 def make_bmc(fillout, remove, pkgdata):
     dir1 = path.join(PROGFILES, r'Boston Micromachines\Lib64')
     dir2 = path.join(PROGFILES, r'Boston Micromachines\Include')
+    dl = path.join(PROGFILES, r'Boston Micromachines\Bin64')
 
     if not path.isdir(dir1) or not path.isdir(dir2):
         return
@@ -161,6 +164,8 @@ def make_bmc(fillout, remove, pkgdata):
         libraries=[libname],
     ))
     remove.append(r'devwraps\bmc.c')
+    pkgdata.append((
+        r'lib\site-packages\devwraps', [path.join(dl, libname + '.dll')]))
 
 
 def make_thorcam(fillout, remove, pkgdata):
@@ -235,6 +240,8 @@ def make_sdk3(fillout, remove, pkgdata):
         libraries=['atcorem'],
     ))
     remove.append(r'devwraps\sdk3.c')
+    pkgdata.append((
+        r'lib\site-packages\devwraps', [path.join(dir1, 'atcore.dll')]))
 
 
 def make_ximea(fillout, remove, pkgdata):
@@ -298,9 +305,19 @@ make_thorcam(exts, remove, pkgdata)
 make_ueye(exts, remove, pkgdata)
 make_sdk3(exts, remove, pkgdata)
 make_ximea(exts, remove, pkgdata)
-names = [e.name for e in exts]
+names = [e.name.replace('devwraps.', '') for e in exts]
 if len(names) == 0:
     raise ValueError('No device driver was found')
+
+
+def fill__all__(names):
+    with open(
+            path.join('devwraps', 'version.py'), 'a', newline='\n') as f:
+        f.write('def get_packages():\n')
+        f.write(f'    return {str(names)}\n')
+
+
+fill__all__(names)
 
 
 setup(
