@@ -12,3 +12,4 @@ if (-not $?) {
 	exit
 }
 pip install (get-item .\dist\*.whl)
+python test\test_imports.py
