@@ -23,21 +23,19 @@
 # To compile install MSVC 2015 command line tools and run
 # python setup.py build_ext --inplace
 
-
-import sys
 import os
-import numpy
 import re
 import subprocess
-
+import sys
 from glob import glob
-from subprocess import check_output
 from os import path
 from shutil import copyfile
+from subprocess import check_output
+
+import numpy
+from Cython.Build import cythonize
 from setuptools import setup
 from setuptools.extension import Extension
-from Cython.Build import cythonize
-
 
 here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
@@ -51,35 +49,27 @@ def update_version():
     try:
         check_output('git --version', universal_newlines=True, shell=True)
     except Exception:
-        raise RuntimeError(
-            'Git must be installed and added to the PATH ' +
-            '(https://stackoverflow.com/questions/19290899)')
+        raise RuntimeError('Git must be installed and added to the PATH ' +
+                           '(https://stackoverflow.com/questions/19290899)')
 
     try:
-        subprocess.call(['git', 'config', 'core.autocrlf', 'true'])
-        subprocess.call(['git', 'config', 'core.fileMode', 'false'])
-        toks = check_output(
-            'git describe --tags --long --dirty', universal_newlines=True,
-            shell=True).strip().split('-')
-        version = toks[0].strip('v') + '+' + toks[1] + '.' + toks[2]
-        if toks[-1] == 'dirty':
-            version += '.dirty'
-        last = check_output(
-            'git log -n 1', universal_newlines=True, shell=True)
-        date = re.search(
-            r'^Date:\s+([^\s].*)$', last, re.MULTILINE).group(1)
-        commit = re.search(
-            r'^commit\s+([^\s]{40})', last, re.MULTILINE).group(1)
+        toks = check_output('git describe --tags --long --dirty',
+                            universal_newlines=True,
+                            shell=True).strip().split('-')
+        version = toks[0].strip('v') + '.' + toks[1]
+        last = check_output('git log -n 1',
+                            universal_newlines=True,
+                            shell=True)
+        date = re.search(r'^Date:\s+([^\s].*)$', last, re.MULTILINE).group(1)
+        commit = re.search(r'^commit\s+([^\s]{40})', last,
+                           re.MULTILINE).group(1)
 
-        with open(
-                path.join('devwraps', 'version.py'), 'w', newline='\n') as f:
+        with open(path.join('devwraps', 'version.py'), 'w', newline='\n') as f:
             f.write('#!/usr/bin/env python3\n')
             f.write('# -*- coding: utf-8 -*-\n\n')
             f.write(f"__version__ = '{version}'\n")
             f.write(f"__date__ = '{date}'\n")
-            f.write(f"__commit__ = '{commit}'\n")
-        subprocess.call(['git', 'config', '--unset', 'core.autocrlf'])
-        subprocess.call(['git', 'config', '--unset', 'core.fileMode'])
+            f.write(f"__commit__ = '{commit}'")
     except Exception as e:
         print(f'Cannot update version: {str(e)}', file=sys.stderr)
         print('Is Git installed?', file=sys.stderr)
@@ -102,15 +92,15 @@ def make_asdk(fillout, remove, pkgdata):
     if not path.isdir(dl) or not path.isdir(di):
         return
 
-    fillout.append(Extension(
-        'devwraps.asdk', [r'devwraps\asdk.pyx'],
-        include_dirs=[r'devwraps', numpy.get_include(), di],
-        library_dirs=[dl],
-        libraries=['ASDK']
-    ))
+    fillout.append(
+        Extension('devwraps.asdk', [r'devwraps\asdk.pyx'],
+                  include_dirs=[r'devwraps',
+                                numpy.get_include(), di],
+                  library_dirs=[dl],
+                  libraries=['ASDK']))
     remove.append(r'devwraps\asdk.c')
-    pkgdata.append((
-        r'lib\site-packages\devwraps', [path.join(dl, 'ASDK.dll')]))
+    pkgdata.append((r'lib\site-packages\devwraps', [path.join(dl,
+                                                              'ASDK.dll')]))
 
 
 def make_ciusb(fillout, remove, pkgdata):
@@ -124,13 +114,15 @@ def make_ciusb(fillout, remove, pkgdata):
         return
 
     copyfile(f1, dst)
-    fillout.append(Extension(
-        'devwraps.ciusb', [r'devwraps\ciusb.pyx', r'devwraps\cciusb.cpp'],
-        include_dirs=[r'devwraps', numpy.get_include(), dir1],
-        library_dirs=[dir1],
-        libraries=['CIUsbLib'],
-        language='c++',
-    ))
+    fillout.append(
+        Extension(
+            'devwraps.ciusb',
+            [r'devwraps\ciusb.pyx', r'devwraps\cciusb.cpp'],
+            include_dirs=[r'devwraps', numpy.get_include(), dir1],
+            library_dirs=[dir1],
+            libraries=['CIUsbLib'],
+            language='c++',
+        ))
     remove.append(dst)
     remove.append(r'devwraps\ciusb.cpp')
 
@@ -154,15 +146,17 @@ def make_bmc(fillout, remove, pkgdata):
     else:
         libname = path.basename(libname).replace('.lib', '')
 
-    fillout.append(Extension(
-        'devwraps.bmc', [r'devwraps\bmc.pyx'],
-        include_dirs=[r'devwraps', numpy.get_include(), dir2],
-        library_dirs=[dir1],
-        libraries=[libname],
-    ))
+    fillout.append(
+        Extension(
+            'devwraps.bmc',
+            [r'devwraps\bmc.pyx'],
+            include_dirs=[r'devwraps', numpy.get_include(), dir2],
+            library_dirs=[dir1],
+            libraries=[libname],
+        ))
     remove.append(r'devwraps\bmc.c')
-    pkgdata.append((
-        r'lib\site-packages\devwraps', [path.join(dl, libname + '.dll')]))
+    pkgdata.append(
+        (r'lib\site-packages\devwraps', [path.join(dl, libname + '.dll')]))
 
 
 def make_thorcam(fillout, remove, pkgdata):
@@ -185,12 +179,14 @@ def make_thorcam(fillout, remove, pkgdata):
     with open(patched, 'w') as f:
         f.write(incl)
 
-    fillout.append(Extension(
-        'devwraps.thorcam', [r'devwraps\thorcam.pyx'],
-        include_dirs=[r'devwraps', numpy.get_include()],
-        library_dirs=[dir2],
-        libraries=['uc480_64'],
-    ))
+    fillout.append(
+        Extension(
+            'devwraps.thorcam',
+            [r'devwraps\thorcam.pyx'],
+            include_dirs=[r'devwraps', numpy.get_include()],
+            library_dirs=[dir2],
+            libraries=['uc480_64'],
+        ))
     remove.append(patched)
     remove.append(r'devwraps\thorcam.c')
     pkgdata.append((r'lib\site-packages\devwraps', [path.join(PROGFILES, p2)]))
@@ -213,12 +209,14 @@ def make_ueye(fillout, remove, pkgdata):
     with open(patched, 'w') as f:
         f.write(incl)
 
-    fillout.append(Extension(
-        'devwraps.ueye', [r'devwraps\ueye.pyx'],
-        include_dirs=[r'devwraps', numpy.get_include()],
-        library_dirs=[dir2],
-        libraries=['ueye_api_64'],
-    ))
+    fillout.append(
+        Extension(
+            'devwraps.ueye',
+            [r'devwraps\ueye.pyx'],
+            include_dirs=[r'devwraps', numpy.get_include()],
+            library_dirs=[dir2],
+            libraries=['ueye_api_64'],
+        ))
     remove.append(patched)
     remove.append(r'devwraps\ueye.c')
     pkgdata.append((r'lib\site-packages\devwraps', [path.join(PROGFILES, p2)]))
@@ -230,22 +228,25 @@ def make_sdk3(fillout, remove, pkgdata):
     if not path.isdir(dir1):
         return
 
-    fillout.append(Extension(
-        'devwraps.sdk3', [r'devwraps\sdk3.pyx'],
-        include_dirs=[r'devwraps', numpy.get_include(), dir1],
-        library_dirs=[dir1],
-        libraries=['atcorem'],
-    ))
+    fillout.append(
+        Extension(
+            'devwraps.sdk3',
+            [r'devwraps\sdk3.pyx'],
+            include_dirs=[r'devwraps', numpy.get_include(), dir1],
+            library_dirs=[dir1],
+            libraries=['atcorem'],
+        ))
     remove.append(r'devwraps\sdk3.c')
-    pkgdata.append((
-        r'lib\site-packages\devwraps', [path.join(dir1, 'atcore.dll')]))
+    pkgdata.append(
+        (r'lib\site-packages\devwraps', [path.join(dir1, 'atcore.dll')]))
 
 
 def make_ximea(fillout, remove, pkgdata):
     dir1 = None
     for p in [
             path.join(PROGFILES, r'XIMEA'),
-            path.join(path.join(PROGFILES, path.pardir), r'XIMEA')]:
+            path.join(path.join(PROGFILES, path.pardir), r'XIMEA')
+    ]:
         if path.isdir(p):
             dir1 = p
             break
@@ -260,7 +261,7 @@ def make_ximea(fillout, remove, pkgdata):
             dllpath = tmp
             break
     if dllpath is None:
-        raise RuntimeError(f'Cannot find xiapi64.dll location')
+        raise RuntimeError('Cannot find xiapi64.dll location')
 
     for f in ['m3ErrorCodes.h', 'm3Identify.h', 'sensorsIdentify.h']:
         copyfile(path.join(dir2, f), path.join('devwraps', f))
@@ -269,18 +270,21 @@ def make_ximea(fillout, remove, pkgdata):
     with open(path.join('devwraps', 'xiApi.h'), 'w') as f:
         f.write(incl)
 
-    fillout.append(Extension(
-        'devwraps.ximea', [r'devwraps\ximea.pyx'],
-        include_dirs=[r'devwraps', numpy.get_include(), dir2],
-        library_dirs=[dllpath],
-        libraries=['xiapi64'],
-    ))
+    fillout.append(
+        Extension(
+            'devwraps.ximea',
+            [r'devwraps\ximea.pyx'],
+            include_dirs=[r'devwraps', numpy.get_include(), dir2],
+            library_dirs=[dllpath],
+            libraries=['xiapi64'],
+        ))
     remove.append(r'devwraps\ximea.c')
     for f in [
-            'm3ErrorCodes.h', 'm3Identify.h', 'sensorsIdentify.h', 'xiApi.h']:
+            'm3ErrorCodes.h', 'm3Identify.h', 'sensorsIdentify.h', 'xiApi.h'
+    ]:
         remove.append(path.join('devwraps', f))
-    pkgdata.append((
-        r'lib\site-packages\devwraps', [path.join(dllpath, 'xiapi64.dll')]))
+    pkgdata.append(
+        (r'lib\site-packages\devwraps', [path.join(dllpath, 'xiapi64.dll')]))
 
 
 exts = []
@@ -308,38 +312,34 @@ if len(names) == 0:
 
 
 def fill__all__(names):
-    with open(
-            path.join('devwraps', 'version.py'), 'a', newline='\n') as f:
+    with open(path.join('devwraps', 'version.py'), 'a', newline='\n') as f:
         f.write('def get_packages():\n')
         f.write(f'    return {str(names)}\n')
 
 
 fill__all__(names)
 
-
-setup(
-    name='devwraps',
-    version=lookup_version(),
-    description='Python wrappers for deformable mirrors and cameras',
-    long_description=long_description,
-    url='https://github.com/jacopoantonello/devwraps',
-    author='Jacopo Antonello',
-    author_email='jacopo@antonello.org',
-    license='GPLv3+',
-    classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: Developers',
-        'Topic :: Scientific/Engineering :: Physics', (
-            'License :: OSI Approved :: GNU General Public License v3 ' +
-            'or later (GPLv3+)'),
-        'Programming Language :: Python :: 3',
-        'Operating System :: Microsoft :: Windows'
-    ],
-    packages=['devwraps'],
-    ext_modules=cythonize(exts, compiler_directives={'language_level': 3}),
-    install_requires=['numpy', 'cython'],
-    zip_safe=False,
-    data_files=pkgdata)
+setup(name='devwraps',
+      version=lookup_version(),
+      description='Python wrappers for deformable mirrors and cameras',
+      long_description=long_description,
+      long_description_content_type='text/markdown',
+      url='https://github.com/jacopoantonello/devwraps',
+      author='Jacopo Antonello',
+      author_email='jacopo@antonello.org',
+      license='GPLv3+',
+      classifiers=[
+          'Development Status :: 4 - Beta', 'Intended Audience :: Developers',
+          'Topic :: Scientific/Engineering :: Physics',
+          ('License :: OSI Approved :: GNU General Public License v3 ' +
+           'or later (GPLv3+)'), 'Programming Language :: Python :: 3',
+          'Operating System :: Microsoft :: Windows'
+      ],
+      packages=['devwraps'],
+      ext_modules=cythonize(exts, compiler_directives={'language_level': 3}),
+      install_requires=['numpy', 'cython'],
+      zip_safe=False,
+      data_files=pkgdata)
 
 try:
     for f in remove:
