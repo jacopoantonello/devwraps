@@ -114,7 +114,7 @@ cdef class ASDK:
         pystr = dev.encode('utf-8')
         cp = pystr
         memset(self.serial_number, 0, MAX_SERIAL_NUMBER)
-        memcpy(self.serial_number, cp, len(pystr))
+        memcpy(self.serial_number, cp, min(len(pystr), MAX_SERIAL_NUMBER))
 
         self.dm = asdkInit(self.serial_number)
         if self.dm is NULL:
@@ -128,7 +128,7 @@ cdef class ASDK:
         else:
             self.nacts = <UInt>tmp
 
-        self.doubles = <Scalar *>malloc(self.nact*sizeof(Scalar))
+        self.doubles = <Scalar *>malloc(self.nacts*sizeof(Scalar))
         if not self.doubles:
             asdkRelease(self.dm)
             self.dm = NULL
@@ -206,7 +206,7 @@ cdef class ASDK:
 
             self.doubles[i] = val
 
-        ret = asdkSend(self.dm, self.doubles);
+        ret = asdkSend(self.dm, self.doubles)
         if ret != SUCCESS:
             raise ValueError('Error in write')
 
