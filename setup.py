@@ -69,7 +69,7 @@ def update_version():
             f.write('# -*- coding: utf-8 -*-\n\n')
             f.write(f"__version__ = '{version}'\n")
             f.write(f"__date__ = '{date}'\n")
-            f.write(f"__commit__ = '{commit}'")
+            f.write(f"__commit__ = '{commit}'\n")
     except Exception as e:
         print(f'Cannot update version: {str(e)}', file=sys.stderr)
         print('Is Git installed?', file=sys.stderr)
