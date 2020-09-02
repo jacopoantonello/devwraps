@@ -7,9 +7,6 @@
 
 """
 
-# devwraps - some device wrappers for Python
-# Copyright 2018-2019 J. Antonello <jacopo@antonello.org>
-#
 # This file is part of devwraps.
 #
 # devwraps is free software: you can redistribute it and/or modify

@@ -4,7 +4,7 @@
 from devwraps import version
 
 __author__ = 'Jacopo Antonello'
-__copyright__ = 'Copyright 2018-2019, Jacopo Antonello'
+__copyright__ = 'Copyright 2018-2020, Jacopo Antonello'
 __license__ = 'GPLv3+'
 __email__ = 'jacopo@antonello.org'
 __status__ = 'Beta'
