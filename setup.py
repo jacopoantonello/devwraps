@@ -25,10 +25,9 @@
 
 import os
 import re
-import subprocess
 import sys
 from glob import glob
-from os import path
+from os import path, walk
 from shutil import copyfile
 from subprocess import check_output
 
@@ -43,6 +42,19 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 PROGFILES = os.environ['PROGRAMFILES']
 WINDIR = os.environ['WINDIR']
+
+
+def find_file(tops, pat, er=None):
+    for top in tops:
+        if path.isdir(top):
+            for root, _, files in walk(top):
+                for f in files:
+                    m = re.search(pat, f)
+                    if m is not None:
+                        return path.join(root, f)
+    if er is None:
+        er = pat
+    raise ValueError(f'Cannot find {er}')
 
 
 def update_version():
@@ -242,30 +254,23 @@ def make_sdk3(fillout, remove, pkgdata):
 
 
 def make_ximea(fillout, remove, pkgdata):
-    dir1 = None
-    for p in [
-            path.join(PROGFILES, r'XIMEA'),
-            path.join(path.join(PROGFILES, path.pardir), r'XIMEA')
-    ]:
-        if path.isdir(p):
-            dir1 = p
-            break
-    if dir1 is None:
-        return
+    tops = [
+        path.join(PROGFILES, r'XIMEA'),
+        path.join(path.join(PROGFILES, path.pardir), r'XIMEA')
+    ]
+    dllname = 'xiapi64.dll'
+    dllpath = find_file(tops, dllname)
+    copies = [
+        'm3ErrorCodes.h',
+        'm3Identify.h',
+        'sensorsIdentify.h',
+        'xiApi.h',
+    ]
+    for f in copies:
+        hf = find_file(tops, f)
+        copyfile(hf, path.join('devwraps', f))
 
-    dir2 = path.join(dir1, r'API')
-    dllpath = None
-    for t in (r'x64', '64bit'):
-        tmp = path.join(dir2, t)
-        if path.isdir(tmp):
-            dllpath = tmp
-            break
-    if dllpath is None:
-        raise RuntimeError('Cannot find xiapi64.dll location')
-
-    for f in ['m3ErrorCodes.h', 'm3Identify.h', 'sensorsIdentify.h']:
-        copyfile(path.join(dir2, f), path.join('devwraps', f))
-    with open(path.join(dir2, 'xiApi.h'), 'r') as f:
+    with open(path.join('devwraps', 'xiApi.h'), 'r') as f:
         incl = f.read().replace('WIN32', '_WIN64')
     with open(path.join('devwraps', 'xiApi.h'), 'w') as f:
         f.write(incl)
@@ -274,17 +279,15 @@ def make_ximea(fillout, remove, pkgdata):
         Extension(
             'devwraps.ximea',
             [r'devwraps\ximea.pyx'],
-            include_dirs=[r'devwraps', numpy.get_include(), dir2],
+            include_dirs=[r'devwraps', numpy.get_include()],
             library_dirs=[dllpath],
             libraries=['xiapi64'],
         ))
     remove.append(r'devwraps\ximea.c')
-    for f in [
-            'm3ErrorCodes.h', 'm3Identify.h', 'sensorsIdentify.h', 'xiApi.h'
-    ]:
+    for f in copies:
         remove.append(path.join('devwraps', f))
     pkgdata.append(
-        (r'lib\site-packages\devwraps', [path.join(dllpath, 'xiapi64.dll')]))
+        (r'lib\site-packages\devwraps', [path.join(dllpath, dllname)]))
 
 
 exts = []
