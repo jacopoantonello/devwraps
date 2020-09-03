@@ -44,14 +44,21 @@ PROGFILES = os.environ['PROGRAMFILES']
 WINDIR = os.environ['WINDIR']
 
 
-def find_file(tops, pat, er=None):
+def find_file(tops, pat, er=None, expats=[]):
     for top in tops:
         if path.isdir(top):
             for root, _, files in walk(top):
-                for f in files:
-                    m = re.search(pat, f)
+                badroot = False
+                for ex in expats:
+                    m = re.search(ex, root)
                     if m is not None:
-                        return path.join(root, f)
+                        badroot = True
+                        break
+                if not badroot:
+                    for f in files:
+                        m = re.search(pat, f)
+                        if m is not None:
+                            return path.join(root, f)
     if er is None:
         er = pat
     raise ValueError(f'Cannot find {er}')
@@ -254,12 +261,14 @@ def make_sdk3(fillout, remove, pkgdata):
 
 
 def make_ximea(fillout, remove, pkgdata):
+    libname = 'xiapi64.lib'
+    dllname = 'xiapi64.dll'
+    expats = ['32bit']
     tops = [
         path.join(PROGFILES, r'XIMEA'),
         path.join(path.join(PROGFILES, path.pardir), r'XIMEA')
     ]
-    dllname = 'xiapi64.lib'
-    dllpath = path.dirname(find_file(tops, dllname))
+    dllpath = path.dirname(find_file(tops, libname, expats=expats))
     copies = [
         'm3ErrorCodes.h',
         'm3Identify.h',
@@ -267,7 +276,7 @@ def make_ximea(fillout, remove, pkgdata):
         'xiApi.h',
     ]
     for f in copies:
-        hf = find_file(tops, f)
+        hf = find_file(tops, f, expats=expats)
         copyfile(hf, path.join('devwraps', f))
 
     with open(path.join('devwraps', 'xiApi.h'), 'r') as f:
