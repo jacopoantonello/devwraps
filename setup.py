@@ -258,8 +258,8 @@ def make_ximea(fillout, remove, pkgdata):
         path.join(PROGFILES, r'XIMEA'),
         path.join(path.join(PROGFILES, path.pardir), r'XIMEA')
     ]
-    dllname = 'xiapi64.dll'
-    dllpath = find_file(tops, dllname)
+    dllname = 'xiapi64.lib'
+    dllpath = path.dirname(find_file(tops, dllname))
     copies = [
         'm3ErrorCodes.h',
         'm3Identify.h',
