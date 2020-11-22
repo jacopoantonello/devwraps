@@ -268,7 +268,10 @@ def make_ximea(fillout, remove, pkgdata):
         path.join(PROGFILES, r'XIMEA'),
         path.join(path.join(PROGFILES, path.pardir), r'XIMEA')
     ]
-    dllpath = path.dirname(find_file(tops, libname, expats=expats))
+    try:
+        dllpath = path.dirname(find_file(tops, libname, expats=expats))
+    except ValueError:
+        return
     copies = [
         'm3ErrorCodes.h',
         'm3Identify.h',
