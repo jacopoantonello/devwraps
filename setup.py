@@ -132,30 +132,6 @@ def make_asdk(fillout, remove, pkgdata):
     remove.append(r'devwraps\asdk.c')
 
 
-def make_ciusb(fillout, remove, pkgdata):
-    dir1 = path.join(PROGFILES, r'Boston Micromachines\Usb\CIUsbLib')
-    f1 = path.join(
-        PROGFILES,
-        r'Boston Micromachines\Usb\Examples\UsbExMulti\_CIUsbLib.tlb')
-    dst = path.join(r'devwraps', '_CIUsbLib.tlb')
-
-    if not path.isdir(dir1):
-        return
-
-    copyfile(f1, dst)
-    fillout.append(
-        Extension(
-            'devwraps.ciusb',
-            [r'devwraps\ciusb.pyx', r'devwraps\cciusb.cpp'],
-            include_dirs=[r'devwraps', numpy.get_include(), dir1],
-            library_dirs=[dir1],
-            libraries=['CIUsbLib'],
-            language='c++',
-        ))
-    remove.append(dst)
-    remove.append(r'devwraps\ciusb.cpp')
-
-
 def make_bmc(fillout, remove, pkgdata):
     dir1 = path.join(PROGFILES, r'Boston Micromachines\Lib64')
     dir2 = path.join(PROGFILES, r'Boston Micromachines\Include')
@@ -322,7 +298,6 @@ for g in glob('devwraps\\*.pyx'):
         print(f'error {f}')
         pass
 make_asdk(exts, remove, pkgdata)
-make_ciusb(exts, remove, pkgdata)
 make_bmc(exts, remove, pkgdata)
 make_thorcam(exts, remove, pkgdata)
 make_ueye(exts, remove, pkgdata)
