@@ -73,3 +73,26 @@ def dll_lookup_ximea():
         src = path.join(dllpath, dllname)
         copyfile(src, target)
         log.debug(f'copied: {src} to {target}')
+
+
+def dll_lookup_asdk():
+    dllname = 'ASDK.dll'
+    here = os.path.dirname(os.path.realpath(__file__))
+    target = path.join(here, dllname)
+    found = path.isfile(target)
+
+    log.debug(f'here: {here}; found: {found}')
+    if not found:
+        expats = ['x86']
+        tops = [
+            path.join(PROGFILES, r'Alpao'),
+        ]
+        try:
+            dllpath = path.dirname(find_file(tops, dllname, expats=expats))
+        except ValueError:
+            log.debug(
+                f'Unable to find Alpao\'s {dllname}. Is the driver installed?')
+            return
+        src = path.join(dllpath, dllname)
+        copyfile(src, target)
+        log.debug(f'copied: {src} to {target}')

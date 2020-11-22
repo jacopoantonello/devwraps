@@ -104,22 +104,32 @@ def lookup_version():
 
 
 def make_asdk(fillout, remove, pkgdata):
-    dir1 = path.join(PROGFILES, r'Alpao\SDK')
-    dl = path.join(dir1, r'Lib\x64')
-    di = path.join(dir1, r'Include')
+    hname = 'asdkType.h'
+    tops = [
+        path.join(PROGFILES, r'Alpao'),
+    ]
+    try:
+        include_path = path.dirname(find_file(tops, hname, expats=[]))
+    except ValueError:
+        return
 
-    if not path.isdir(dl) or not path.isdir(di):
+    libname = 'ASDK.lib'
+    tops = [
+        path.join(PROGFILES, r'Alpao'),
+    ]
+    try:
+        lib_path = path.dirname(find_file(tops, libname, expats=['x86']))
+    except ValueError:
         return
 
     fillout.append(
-        Extension('devwraps.asdk', [r'devwraps\asdk.pyx'],
-                  include_dirs=[r'devwraps',
-                                numpy.get_include(), di],
-                  library_dirs=[dl],
-                  libraries=['ASDK']))
+        Extension(
+            'devwraps.asdk', [r'devwraps\asdk.pyx'],
+            include_dirs=[r'devwraps',
+                          numpy.get_include(), include_path],
+            library_dirs=[lib_path],
+            libraries=['ASDK']))
     remove.append(r'devwraps\asdk.c')
-    pkgdata.append((r'lib\site-packages\devwraps', [path.join(dl,
-                                                              'ASDK.dll')]))
 
 
 def make_ciusb(fillout, remove, pkgdata):
@@ -262,7 +272,6 @@ def make_sdk3(fillout, remove, pkgdata):
 
 def make_ximea(fillout, remove, pkgdata):
     libname = 'xiapi64.lib'
-    dllname = 'xiapi64.dll'
     expats = ['32bit']
     tops = [
         path.join(PROGFILES, r'XIMEA'),
@@ -298,8 +307,6 @@ def make_ximea(fillout, remove, pkgdata):
     remove.append(r'devwraps\ximea.c')
     for f in copies:
         remove.append(path.join('devwraps', f))
-    pkgdata.append(
-        (r'lib\site-packages\devwraps', [path.join(dllpath, dllname)]))
 
 
 exts = []
