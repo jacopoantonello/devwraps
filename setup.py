@@ -133,47 +133,59 @@ def make_asdk(fillout, remove, pkgdata):
 
 
 def make_bmc(fillout, remove, pkgdata):
-    dir1 = path.join(PROGFILES, r'Boston Micromachines\Lib64')
-    dir2 = path.join(PROGFILES, r'Boston Micromachines\Include')
-    dl = path.join(PROGFILES, r'Boston Micromachines\Bin64')
-
-    if not path.isdir(dir1) or not path.isdir(dir2):
+    libname = r'BMC[0-9]*\.lib'
+    tops = [
+        path.join(PROGFILES, r'Boston Micromachines'),
+    ]
+    try:
+        lib_fname = find_file(tops, libname, expats=[])
+        lib_path = path.dirname(lib_fname)
+        lib_name = path.basename(lib_path).replace('.dll', '')
+    except ValueError:
         return
 
-    libname = None
-    for p in glob(path.join(dir1, 'BMC*.lib')):
-        m = re.search(r'BMC[0-9]*\.lib', p)
-        if m is not None:
-            libname = p
-            break
-    if not path.isfile(libname):
-        raise RuntimeError('Cannot find BMC*.lib')
-    else:
-        libname = path.basename(libname).replace('.lib', '')
+    iname = r'BmcApi.h'
+    tops = [
+        path.join(PROGFILES, r'Boston Micromachines'),
+    ]
+    try:
+        include_path = path.dirname(find_file(tops, iname, expats=[]))
+    except ValueError:
+        return
 
     fillout.append(
         Extension(
             'devwraps.bmc',
             [r'devwraps\bmc.pyx'],
-            include_dirs=[r'devwraps', numpy.get_include(), dir2],
-            library_dirs=[dir1],
-            libraries=[libname],
+            include_dirs=[r'devwraps',
+                          numpy.get_include(), include_path],
+            library_dirs=[lib_path],
+            libraries=[lib_name],
         ))
     remove.append(r'devwraps\bmc.c')
-    pkgdata.append(
-        (r'lib\site-packages\devwraps', [path.join(dl, libname + '.dll')]))
 
 
 def make_thorcam(fillout, remove, pkgdata):
-    p1 = r'Thorlabs\Scientific Imaging\DCx Camera Support\Develop'
-    p2 = r'Thorlabs\Scientific Imaging\ThorCam\uc480_64.dll'
-    dir1 = path.join(PROGFILES, p1, r'Include')
-    dir2 = path.join(PROGFILES, p1, r'Lib')
-    pristine = path.join(dir1, 'uc480.h')
-    patched = path.join(r'devwraps', 'uc480.h')
-
-    if not path.isdir(dir1) or not path.isdir(dir2):
+    hname = 'uc480.h'
+    tops = [
+        path.join(PROGFILES, 'Thorlabs', 'Scientific Imaging'),
+    ]
+    try:
+        include_path = path.dirname(find_file(tops, hname, expats=['Source']))
+    except ValueError:
         return
+
+    libname = 'uc480_64.lib'
+    tops = [
+        path.join(PROGFILES, 'Thorlabs', 'Scientific Imaging'),
+    ]
+    try:
+        lib_path = path.dirname(find_file(tops, libname, expats=['Source']))
+    except ValueError:
+        return
+
+    pristine = path.join(include_path, 'uc480.h')
+    patched = path.join(r'devwraps', 'uc480.h')
 
     with open(pristine, 'r') as f:
         incl = f.read()
@@ -189,12 +201,11 @@ def make_thorcam(fillout, remove, pkgdata):
             'devwraps.thorcam',
             [r'devwraps\thorcam.pyx'],
             include_dirs=[r'devwraps', numpy.get_include()],
-            library_dirs=[dir2],
+            library_dirs=[lib_path],
             libraries=['uc480_64'],
         ))
     remove.append(patched)
     remove.append(r'devwraps\thorcam.c')
-    pkgdata.append((r'lib\site-packages\devwraps', [path.join(PROGFILES, p2)]))
 
 
 def make_ueye(fillout, remove, pkgdata):
@@ -257,6 +268,7 @@ def make_ximea(fillout, remove, pkgdata):
         dllpath = path.dirname(find_file(tops, libname, expats=expats))
     except ValueError:
         return
+
     copies = [
         'm3ErrorCodes.h',
         'm3Identify.h',

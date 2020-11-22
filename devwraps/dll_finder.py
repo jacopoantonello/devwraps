@@ -49,6 +49,9 @@ def find_file(tops, pat, er=None, expats=[]):
 
 def look_for_dlls():
     dll_lookup_ximea()
+    dll_lookup_asdk()
+    dll_lookup_bmc()
+    dll_lookup_thorcam()
 
 
 def dll_lookup_ximea():
@@ -92,6 +95,50 @@ def dll_lookup_asdk():
         except ValueError:
             log.debug(
                 f'Unable to find Alpao\'s {dllname}. Is the driver installed?')
+            return
+        src = path.join(dllpath, dllname)
+        copyfile(src, target)
+        log.debug(f'copied: {src} to {target}')
+
+
+def dll_lookup_bmc():
+    dllname = r'BMC[0-9]*\.lib'
+    here = os.path.dirname(os.path.realpath(__file__))
+    target = path.join(here, dllname)
+    found = path.isfile(target)
+
+    log.debug(f'here: {here}; found: {found}')
+    if not found:
+        tops = [
+            path.join(PROGFILES, r'Boston Micromachines'),
+        ]
+        try:
+            dllpath = path.dirname(find_file(tops, dllname, expats=[]))
+        except ValueError:
+            log.debug(
+                f'Unable to find BMC\'s {dllname}. Is the driver installed?')
+            return
+        src = path.join(dllpath, dllname)
+        copyfile(src, target)
+        log.debug(f'copied: {src} to {target}')
+
+
+def dll_lookup_thorcam():
+    dllname = 'uc480_64.dll'
+    here = os.path.dirname(os.path.realpath(__file__))
+    target = path.join(here, dllname)
+    found = path.isfile(target)
+
+    log.debug(f'here: {here}; found: {found}')
+    if not found:
+        tops = [
+            path.join(PROGFILES, 'Thorlabs', 'Scientific Imaging'),
+        ]
+        try:
+            dllpath = path.dirname(find_file(tops, dllname, expats=[]))
+        except ValueError:
+            log.debug(
+                f'Unable to find Thorlabs {dllname}. Is the driver installed?')
             return
         src = path.join(dllpath, dllname)
         copyfile(src, target)
