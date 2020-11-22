@@ -52,6 +52,8 @@ def look_for_dlls():
     dll_lookup_asdk()
     dll_lookup_bmc()
     dll_lookup_thorcam()
+    dll_lookup_ueye()
+    dll_lookup_sdk3()
 
 
 def dll_lookup_ximea():
@@ -102,7 +104,7 @@ def dll_lookup_asdk():
 
 
 def dll_lookup_bmc():
-    dllname = r'BMC[0-9]*\.lib'
+    dllname = r'BMC[0-9]*\.dll'
     here = os.path.dirname(os.path.realpath(__file__))
     target = path.join(here, dllname)
     found = path.isfile(target)
@@ -139,6 +141,50 @@ def dll_lookup_thorcam():
         except ValueError:
             log.debug(
                 f'Unable to find Thorlabs {dllname}. Is the driver installed?')
+            return
+        src = path.join(dllpath, dllname)
+        copyfile(src, target)
+        log.debug(f'copied: {src} to {target}')
+
+
+def dll_lookup_ueye():
+    dllname = 'ueye_api_64.dll'
+    here = os.path.dirname(os.path.realpath(__file__))
+    target = path.join(here, dllname)
+    found = path.isfile(target)
+
+    log.debug(f'here: {here}; found: {found}')
+    if not found:
+        tops = [
+            path.join(PROGFILES, 'IDS', 'uEye'),
+        ]
+        try:
+            dllpath = path.dirname(find_file(tops, dllname, expats=[]))
+        except ValueError:
+            log.debug(
+                f'Unable to find IDS {dllname}. Is the driver installed?')
+            return
+        src = path.join(dllpath, dllname)
+        copyfile(src, target)
+        log.debug(f'copied: {src} to {target}')
+
+
+def dll_lookup_sdk3():
+    dllname = 'atcorem.dll'
+    here = os.path.dirname(os.path.realpath(__file__))
+    target = path.join(here, dllname)
+    found = path.isfile(target)
+
+    log.debug(f'here: {here}; found: {found}')
+    if not found:
+        tops = [
+            path.join(PROGFILES, 'Andor SDK3'),
+        ]
+        try:
+            dllpath = path.dirname(find_file(tops, dllname, expats=[]))
+        except ValueError:
+            log.debug(
+                f'Unable to find SDK3\'s {dllname}. Is the driver installed?')
             return
         src = path.join(dllpath, dllname)
         copyfile(src, target)

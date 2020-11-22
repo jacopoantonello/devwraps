@@ -114,9 +114,6 @@ def make_asdk(fillout, remove, pkgdata):
         return
 
     libname = 'ASDK.lib'
-    tops = [
-        path.join(PROGFILES, r'Alpao'),
-    ]
     try:
         lib_path = path.dirname(find_file(tops, libname, expats=['x86']))
     except ValueError:
@@ -145,9 +142,6 @@ def make_bmc(fillout, remove, pkgdata):
         return
 
     iname = r'BmcApi.h'
-    tops = [
-        path.join(PROGFILES, r'Boston Micromachines'),
-    ]
     try:
         include_path = path.dirname(find_file(tops, iname, expats=[]))
     except ValueError:
@@ -176,9 +170,6 @@ def make_thorcam(fillout, remove, pkgdata):
         return
 
     libname = 'uc480_64.lib'
-    tops = [
-        path.join(PROGFILES, 'Thorlabs', 'Scientific Imaging'),
-    ]
     try:
         lib_path = path.dirname(find_file(tops, libname, expats=['Source']))
     except ValueError:
@@ -209,15 +200,23 @@ def make_thorcam(fillout, remove, pkgdata):
 
 
 def make_ueye(fillout, remove, pkgdata):
-    p1 = r'IDS\uEye\Develop'
-    p2 = r'IDS\uEye\USB driver package\ueye_api_64.dll'
-    dir1 = path.join(PROGFILES, p1, r'Include')
-    dir2 = path.join(PROGFILES, p1, r'Lib')
-    pristine = path.join(dir1, 'uEye.h')
-    patched = path.join(r'devwraps', 'uEye.h')
-
-    if not path.isdir(dir1) or not path.isdir(dir2):
+    hname = 'uEye.h'
+    tops = [
+        path.join(PROGFILES, 'IDS', 'uEye'),
+    ]
+    try:
+        include_path = path.dirname(find_file(tops, hname, expats=[]))
+    except ValueError:
         return
+
+    libname = 'uEye_api_64.lib'
+    try:
+        lib_path = path.dirname(find_file(tops, libname, expats=[]))
+    except ValueError:
+        return
+
+    pristine = path.join(include_path, 'uEye.h')
+    patched = path.join(r'devwraps', 'uEye.h')
 
     with open(pristine, 'r') as f:
         incl = f.read()
@@ -230,31 +229,39 @@ def make_ueye(fillout, remove, pkgdata):
             'devwraps.ueye',
             [r'devwraps\ueye.pyx'],
             include_dirs=[r'devwraps', numpy.get_include()],
-            library_dirs=[dir2],
+            library_dirs=[lib_path],
             libraries=['ueye_api_64'],
         ))
     remove.append(patched)
     remove.append(r'devwraps\ueye.c')
-    pkgdata.append((r'lib\site-packages\devwraps', [path.join(PROGFILES, p2)]))
 
 
 def make_sdk3(fillout, remove, pkgdata):
-    dir1 = path.join(PROGFILES, r'Andor SDK3')
+    hname = 'atcore.h'
+    tops = [
+        path.join(PROGFILES, 'Andor SDK3'),
+    ]
+    try:
+        include_path = path.dirname(find_file(tops, hname, expats=['win32']))
+    except ValueError:
+        return
 
-    if not path.isdir(dir1):
+    libname = 'atcorem.lib'
+    try:
+        lib_path = path.dirname(find_file(tops, libname, expats=['Source']))
+    except ValueError:
         return
 
     fillout.append(
         Extension(
             'devwraps.sdk3',
             [r'devwraps\sdk3.pyx'],
-            include_dirs=[r'devwraps', numpy.get_include(), dir1],
-            library_dirs=[dir1],
+            include_dirs=[r'devwraps',
+                          numpy.get_include(), include_path],
+            library_dirs=[lib_path],
             libraries=['atcorem'],
         ))
     remove.append(r'devwraps\sdk3.c')
-    pkgdata.append(
-        (r'lib\site-packages\devwraps', [path.join(dir1, 'atcore.dll')]))
 
 
 def make_ximea(fillout, remove, pkgdata):
