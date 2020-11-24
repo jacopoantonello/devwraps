@@ -19,6 +19,7 @@
 import logging
 import os
 import re
+from glob import glob
 from os import path, walk
 from shutil import copyfile
 
@@ -45,6 +46,12 @@ def find_file(tops, pat, er=None, expats=[]):
     if er is None:
         er = pat
     raise ValueError(f'Cannot find {er}')
+
+
+def remove_dlls():
+    here = path.dirname(path.realpath(__file__))
+    for g in glob(path.join(here, '*.dll')):
+        os.remove(g)
 
 
 def look_for_dlls():
@@ -184,8 +191,8 @@ def dll_lookup_ueye():
 
 
 def dll_lookup_sdk3():
-    dll_name = 'atcorem.dll'
-    dll_pat = r'^atcorem\.dll$'
+    dll_name = 'atcore.dll'
+    dll_pat = r'^atcore\.dll$'
 
     here = path.dirname(path.realpath(__file__))
     target = path.join(here, dll_name)

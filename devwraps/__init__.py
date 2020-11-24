@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from devwraps import version
-from devwraps.dll_finder import look_for_dlls
+from devwraps.dll_finder import look_for_dlls, remove_dlls
 
 __author__ = 'Jacopo Antonello'
 __copyright__ = 'Copyright 2018-2020, Jacopo Antonello'
@@ -19,3 +19,4 @@ commit:  {version.__commit__}
 """
 
 look_for_dlls()
+assert (remove_dlls)
