@@ -104,7 +104,7 @@ def lookup_version():
 
 
 def make_asdk(fillout, remove, pkgdata):
-    hname = 'asdkType.h'
+    hname = r'^asdkType\.h$'
     tops = [
         path.join(PROGFILES, r'Alpao'),
     ]
@@ -113,7 +113,7 @@ def make_asdk(fillout, remove, pkgdata):
     except ValueError:
         return
 
-    libname = 'ASDK.lib'
+    libname = r'^ASDK\.lib$'
     try:
         lib_path = path.dirname(find_file(tops, libname, expats=['x86']))
     except ValueError:
@@ -130,18 +130,18 @@ def make_asdk(fillout, remove, pkgdata):
 
 
 def make_bmc(fillout, remove, pkgdata):
-    libname = r'BMC[0-9]*\.lib'
+    libname = r'^BMC[0-9]*\.lib$'
     tops = [
         path.join(PROGFILES, r'Boston Micromachines'),
     ]
     try:
         lib_fname = find_file(tops, libname, expats=[])
         lib_path = path.dirname(lib_fname)
-        lib_name = path.basename(lib_path).replace('.dll', '')
+        lib_name = path.basename(lib_fname).replace('.lib', '')
     except ValueError:
         return
 
-    iname = r'BmcApi.h'
+    iname = r'^BmcApi\.h$'
     try:
         include_path = path.dirname(find_file(tops, iname, expats=[]))
     except ValueError:
@@ -160,7 +160,7 @@ def make_bmc(fillout, remove, pkgdata):
 
 
 def make_thorcam(fillout, remove, pkgdata):
-    hname = 'uc480.h'
+    hname = r'^uc480\.h$'
     tops = [
         path.join(PROGFILES, 'Thorlabs', 'Scientific Imaging'),
     ]
@@ -169,7 +169,7 @@ def make_thorcam(fillout, remove, pkgdata):
     except ValueError:
         return
 
-    libname = 'uc480_64.lib'
+    libname = r'^uc480_64\.lib$'
     try:
         lib_path = path.dirname(find_file(tops, libname, expats=['Source']))
     except ValueError:
@@ -200,7 +200,7 @@ def make_thorcam(fillout, remove, pkgdata):
 
 
 def make_ueye(fillout, remove, pkgdata):
-    hname = 'uEye.h'
+    hname = r'^uEye\.h$'
     tops = [
         path.join(PROGFILES, 'IDS', 'uEye'),
     ]
@@ -209,7 +209,7 @@ def make_ueye(fillout, remove, pkgdata):
     except ValueError:
         return
 
-    libname = 'uEye_api_64.lib'
+    libname = r'^uEye_api_64\.lib$'
     try:
         lib_path = path.dirname(find_file(tops, libname, expats=[]))
     except ValueError:
@@ -237,7 +237,7 @@ def make_ueye(fillout, remove, pkgdata):
 
 
 def make_sdk3(fillout, remove, pkgdata):
-    hname = 'atcore.h'
+    hname = r'^atcore\.h$'
     tops = [
         path.join(PROGFILES, 'Andor SDK3'),
     ]
@@ -246,7 +246,7 @@ def make_sdk3(fillout, remove, pkgdata):
     except ValueError:
         return
 
-    libname = 'atcorem.lib'
+    libname = r'^atcorem\.lib$'
     try:
         lib_path = path.dirname(find_file(tops, libname, expats=['Source']))
     except ValueError:
@@ -265,7 +265,7 @@ def make_sdk3(fillout, remove, pkgdata):
 
 
 def make_ximea(fillout, remove, pkgdata):
-    libname = 'xiapi64.lib'
+    libname = r'^xiapi64\.lib$'
     expats = ['32bit']
     tops = [
         path.join(PROGFILES, r'XIMEA'),
@@ -277,14 +277,15 @@ def make_ximea(fillout, remove, pkgdata):
         return
 
     copies = [
-        'm3ErrorCodes.h',
-        'm3Identify.h',
-        'sensorsIdentify.h',
-        'xiApi.h',
+        (r'^m3ErrorCodes\.h$', 'm3ErrorCodes.h'),
+        (r'^m3Identify\.h$', 'm3Identify.h'),
+        (r'^sensorsIdentify\.h$', 'sensorsIdentify.h'),
+        (r'^xiApi\.h$', 'xiApi.h'),
     ]
-    for f in copies:
-        hf = find_file(tops, f, expats=expats)
-        copyfile(hf, path.join('devwraps', f))
+    for t in copies:
+        pat, n = t
+        hf = find_file(tops, pat, expats=expats)
+        copyfile(hf, path.join('devwraps', n))
 
     with open(path.join('devwraps', 'xiApi.h'), 'r') as f:
         incl = f.read().replace('WIN32', '_WIN64')
@@ -300,8 +301,9 @@ def make_ximea(fillout, remove, pkgdata):
             libraries=['xiapi64'],
         ))
     remove.append(r'devwraps\ximea.c')
-    for f in copies:
-        remove.append(path.join('devwraps', f))
+    for t in copies:
+        _, n = t
+        remove.append(path.join('devwraps', n))
 
 
 exts = []

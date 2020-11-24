@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from devwraps import version
+from devwraps.dll_finder import look_for_dlls
 
 __author__ = 'Jacopo Antonello'
 __copyright__ = 'Copyright 2018-2020, Jacopo Antonello'
@@ -16,3 +17,5 @@ date:    {version.__date__}
 version: {version.__version__}
 commit:  {version.__commit__}
 """
+
+look_for_dlls()

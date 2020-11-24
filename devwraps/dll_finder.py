@@ -57,9 +57,11 @@ def look_for_dlls():
 
 
 def dll_lookup_ximea():
-    dllname = 'xiapi64.dll'
-    here = os.path.dirname(os.path.realpath(__file__))
-    target = path.join(here, dllname)
+    dll_name = 'xiapi64.dll'
+    dll_pat = r'^xiapi64\.dll$'
+
+    here = path.dirname(path.realpath(__file__))
+    target = path.join(here, dll_name)
     found = path.isfile(target)
 
     log.debug(f'here: {here}; found: {found}')
@@ -70,20 +72,22 @@ def dll_lookup_ximea():
             path.join(path.join(PROGFILES, path.pardir), r'XIMEA')
         ]
         try:
-            dllpath = path.dirname(find_file(tops, dllname, expats=expats))
+            dllpath = path.dirname(find_file(tops, dll_pat, expats=expats))
         except ValueError:
-            log.debug(
-                f'Unable to find Ximea\'s {dllname}. Is the driver installed?')
+            log.debug(f'Unable to find Ximea\'s {dll_name}. ' +
+                      'Is the driver installed?')
             return
-        src = path.join(dllpath, dllname)
+        src = path.join(dllpath, dll_name)
         copyfile(src, target)
         log.debug(f'copied: {src} to {target}')
 
 
 def dll_lookup_asdk():
-    dllname = 'ASDK.dll'
-    here = os.path.dirname(os.path.realpath(__file__))
-    target = path.join(here, dllname)
+    dll_name = 'ASDK.dll'
+    dll_pat = r'^ASDK\.dll$'
+
+    here = path.dirname(path.realpath(__file__))
+    target = path.join(here, dll_name)
     found = path.isfile(target)
 
     log.debug(f'here: {here}; found: {found}')
@@ -93,42 +97,50 @@ def dll_lookup_asdk():
             path.join(PROGFILES, r'Alpao'),
         ]
         try:
-            dllpath = path.dirname(find_file(tops, dllname, expats=expats))
+            dllpath = path.dirname(find_file(tops, dll_pat, expats=expats))
         except ValueError:
-            log.debug(
-                f'Unable to find Alpao\'s {dllname}. Is the driver installed?')
+            log.debug(f'Unable to find Alpao\'s {dll_name}. ' +
+                      'Is the driver installed?')
             return
-        src = path.join(dllpath, dllname)
+        src = path.join(dllpath, dll_name)
         copyfile(src, target)
         log.debug(f'copied: {src} to {target}')
 
 
 def dll_lookup_bmc():
-    dllname = r'BMC[0-9]*\.dll'
-    here = os.path.dirname(os.path.realpath(__file__))
-    target = path.join(here, dllname)
-    found = path.isfile(target)
+    dll_pat = r'^BMC[0-9]+\.dll$'
 
+    here = path.dirname(path.realpath(__file__))
+    try:
+        find_file([here], dll_pat, expats=[])
+        return
+    except ValueError:
+        pass
+
+    tops = [
+        path.join(PROGFILES, r'Boston Micromachines'),
+    ]
+    try:
+        dll_path = find_file(tops, dll_pat, expats=[])
+    except ValueError:
+        log.debug('Unable to find BMC\'s DLL. Is the driver installed?')
+        return
+
+    dll_name = path.basename(dll_path)
+    target = path.join(here, dll_name)
+
+    found = path.isfile(target)
     log.debug(f'here: {here}; found: {found}')
-    if not found:
-        tops = [
-            path.join(PROGFILES, r'Boston Micromachines'),
-        ]
-        try:
-            dllpath = path.dirname(find_file(tops, dllname, expats=[]))
-        except ValueError:
-            log.debug(
-                f'Unable to find BMC\'s {dllname}. Is the driver installed?')
-            return
-        src = path.join(dllpath, dllname)
-        copyfile(src, target)
-        log.debug(f'copied: {src} to {target}')
+    copyfile(dll_path, target)
+    log.debug(f'copied: {dll_path} to {target}')
 
 
 def dll_lookup_thorcam():
-    dllname = 'uc480_64.dll'
-    here = os.path.dirname(os.path.realpath(__file__))
-    target = path.join(here, dllname)
+    dll_name = 'uc480_64.dll'
+    dll_pat = r'^uc480_64\.dll$'
+
+    here = path.dirname(path.realpath(__file__))
+    target = path.join(here, dll_name)
     found = path.isfile(target)
 
     log.debug(f'here: {here}; found: {found}')
@@ -137,20 +149,22 @@ def dll_lookup_thorcam():
             path.join(PROGFILES, 'Thorlabs', 'Scientific Imaging'),
         ]
         try:
-            dllpath = path.dirname(find_file(tops, dllname, expats=[]))
+            dllpath = path.dirname(find_file(tops, dll_pat, expats=[]))
         except ValueError:
-            log.debug(
-                f'Unable to find Thorlabs {dllname}. Is the driver installed?')
+            log.debug(f'Unable to find Thorlabs {dll_name}. ' +
+                      'Is the driver installed?')
             return
-        src = path.join(dllpath, dllname)
+        src = path.join(dllpath, dll_name)
         copyfile(src, target)
         log.debug(f'copied: {src} to {target}')
 
 
 def dll_lookup_ueye():
-    dllname = 'ueye_api_64.dll'
-    here = os.path.dirname(os.path.realpath(__file__))
-    target = path.join(here, dllname)
+    dll_name = 'ueye_api_64.dll'
+    dll_pat = r'^ueye_api_64\.dll$'
+
+    here = path.dirname(path.realpath(__file__))
+    target = path.join(here, dll_name)
     found = path.isfile(target)
 
     log.debug(f'here: {here}; found: {found}')
@@ -159,20 +173,22 @@ def dll_lookup_ueye():
             path.join(PROGFILES, 'IDS', 'uEye'),
         ]
         try:
-            dllpath = path.dirname(find_file(tops, dllname, expats=[]))
+            dllpath = path.dirname(find_file(tops, dll_pat, expats=[]))
         except ValueError:
-            log.debug(
-                f'Unable to find IDS {dllname}. Is the driver installed?')
+            log.debug(f'Unable to find IDS {dll_name}. ' +
+                      'Is the driver installed?')
             return
-        src = path.join(dllpath, dllname)
+        src = path.join(dllpath, dll_name)
         copyfile(src, target)
         log.debug(f'copied: {src} to {target}')
 
 
 def dll_lookup_sdk3():
-    dllname = 'atcorem.dll'
-    here = os.path.dirname(os.path.realpath(__file__))
-    target = path.join(here, dllname)
+    dll_name = 'atcorem.dll'
+    dll_pat = r'^atcorem\.dll$'
+
+    here = path.dirname(path.realpath(__file__))
+    target = path.join(here, dll_name)
     found = path.isfile(target)
 
     log.debug(f'here: {here}; found: {found}')
@@ -181,11 +197,11 @@ def dll_lookup_sdk3():
             path.join(PROGFILES, 'Andor SDK3'),
         ]
         try:
-            dllpath = path.dirname(find_file(tops, dllname, expats=[]))
+            dllpath = path.dirname(find_file(tops, dll_pat, expats=[]))
         except ValueError:
-            log.debug(
-                f'Unable to find SDK3\'s {dllname}. Is the driver installed?')
+            log.debug(f'Unable to find SDK3\'s {dll_name}. ' +
+                      'Is the driver installed?')
             return
-        src = path.join(dllpath, dllname)
+        src = path.join(dllpath, dll_name)
         copyfile(src, target)
         log.debug(f'copied: {src} to {target}')
