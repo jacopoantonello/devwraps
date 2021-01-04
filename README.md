@@ -8,9 +8,9 @@ A collection of device wrappers for Python 3 in Windows. This library includes s
 * [ALPAO](https://www.alpao.com/) deformable mirrors
   - (`asdk`)
 * [Thorlabs](https://www.thorlabs.com/software_pages/ViewSoftwarePage.cfm?Code=ThorCam) scientific cameras
-  - Grayscale devices (`thorcam`)
+  - Grayscale DCx compact USB cameras (`thorcam`)
 * [IDS](https://en.ids-imaging.com/) scientific cameras
-  - Grayscale devices (`ueye`)
+  - Grayscale DCx USB cameras (`ueye`)
 * [Andor](http://www.andor.com/scientific-software/software-development-kit) scientific cameras
   - Grayscale devices (`sdk3`)
 * [Ximea](https://www.ximea.com/) scientific cameras
@@ -25,7 +25,10 @@ A collection of device wrappers for Python 3 in Windows. This library includes s
 * *Clone* this repository using Git. Do not use GitHub's *Download ZIP* button above.
 * Finally double-click on `install.bat`.
 
+### Testing
+* Open an `Anaconda Prompt` and type `python -m devwraps.test`
+
 ### Known bugs
-* `asdk` and `sdk3` are mostly untested
-* timeout error handling in `grab_image()` is incomplete
-* continuous acquisition (`start_video()` and `stop_video()`) mostly untested
+* The `asdk` and `sdk3` modules are mostly untested
+* Timeout error handling in `grab_image()` is incomplete
+* Continuous acquisition (`start_video()` and `stop_video()`) is mostly untested

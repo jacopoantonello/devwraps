@@ -5,7 +5,7 @@ from devwraps import version
 from devwraps.dll_finder import look_for_dlls, remove_dlls
 
 __author__ = 'Jacopo Antonello'
-__copyright__ = 'Copyright 2018-2020, Jacopo Antonello'
+__copyright__ = 'Copyright 2018-2021, Jacopo Antonello'
 __license__ = 'GPLv3+'
 __email__ = 'jacopo@antonello.org'
 __status__ = 'Beta'
