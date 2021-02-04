@@ -103,6 +103,34 @@ def lookup_version():
     return m.group(1)
 
 
+def make_mirao52(fillout, remove, pkgdata):
+    hname = r'^mirao52e\.h$'
+    tops = [
+        # NOTE add here the path to the Mirao installation folder
+        path.join(PROGFILES, r'ImagineOptic'),
+        path.join(PROGFILES, r'ImagineEyes'),
+    ]
+    try:
+        include_path = path.dirname(find_file(tops, hname, expats=[]))
+    except ValueError:
+        return
+
+    libname = r'^mirao52e\.lib$'
+    try:
+        lib_path = path.dirname(find_file(tops, libname, expats=['i386']))
+    except ValueError:
+        return
+
+    fillout.append(
+        Extension(
+            'devwraps.mirao52e', [r'devwraps\mirao52e.pyx'],
+            include_dirs=[r'devwraps',
+                          numpy.get_include(), include_path],
+            library_dirs=[lib_path],
+            libraries=['mirao52e']))
+    remove.append(r'devwraps\mirao52e.c')
+
+
 def make_asdk(fillout, remove, pkgdata):
     hname = r'^asdkType\.h$'
     tops = [
@@ -318,6 +346,7 @@ for g in glob('devwraps\\*.pyx'):
     except OSError:
         print(f'error {f}')
         pass
+make_mirao52(exts, remove, pkgdata)
 make_asdk(exts, remove, pkgdata)
 make_bmc(exts, remove, pkgdata)
 make_thorcam(exts, remove, pkgdata)

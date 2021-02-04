@@ -61,6 +61,7 @@ def look_for_dlls():
     dll_lookup_thorcam()
     dll_lookup_ueye()
     dll_lookup_sdk3()
+    dll_lookup_mirao52e()
 
 
 def dll_lookup_ximea():
@@ -107,6 +108,33 @@ def dll_lookup_asdk():
             dllpath = path.dirname(find_file(tops, dll_pat, expats=expats))
         except ValueError:
             log.debug(f'Unable to find Alpao\'s {dll_name}. ' +
+                      'Is the driver installed?')
+            return
+        src = path.join(dllpath, dll_name)
+        copyfile(src, target)
+        log.debug(f'copied: {src} to {target}')
+
+
+def dll_lookup_mirao52e():
+    dll_name = 'mirao52e.dll'
+    dll_pat = r'^mirao52e\.dll$'
+
+    here = path.dirname(path.realpath(__file__))
+    target = path.join(here, dll_name)
+    found = path.isfile(target)
+
+    log.debug(f'here: {here}; found: {found}')
+    if not found:
+        expats = ['i386']
+        tops = [
+            # NOTE add here the path to the Mirao installation folder
+            path.join(PROGFILES, r'ImagineOptic'),
+            path.join(PROGFILES, r'ImagineEyes'),
+        ]
+        try:
+            dllpath = path.dirname(find_file(tops, dll_pat, expats=expats))
+        except ValueError:
+            log.debug(f'Unable to find Mirao52e\'s {dll_name}. ' +
                       'Is the driver installed?')
             return
         src = path.join(dllpath, dll_name)
