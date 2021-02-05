@@ -18,8 +18,21 @@ A collection of device wrappers for Python 3 in Windows. This library includes s
 * [Ximea](https://www.ximea.com/) scientific cameras
   - Grayscale devices (`ximea`)
 
-### DLLs
-If some device drivers are not installed in their default location then you should edit `dll_paths.py` before running the installation. Just add the non-standard *absolute* path to the corresponding dictionary entry. For example, if the Mirao52e folder is in `C:\dir1\dir2\Mirao`, then you should add `'C:\\dir1\\dir2\\Mirao'` to `'mirao52e'`.
+### DLLs and device drivers paths
+If some device drivers are not installed in their default location then you should edit `dll_paths.py`. Just add the non-standard *absolute* paths to the corresponding dictionary entry. For example, if the Mirao52e folder is in `C:\dir1\dir2\Mirao`, then you should add `'C:\\dir1\\dir2\\Mirao'` to `'mirao52e'`. You may want to add the DLLs manually after installation.
+
+```python
+import devwraps
+
+# removes all DLLs
+devwraps.remove_dlls()
+
+# look for DLLs according to the paths specified in `dll_paths.py`
+devwraps.look_for_dlls()
+
+# print the root folder of this module
+print(devwraps.get_root_folder)
+```
 
 ### Install
 * Download and install the drivers for the devices you want to use from the ones listed above. Make sure to install the development API in case this is optional.

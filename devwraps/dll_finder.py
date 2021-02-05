@@ -50,9 +50,13 @@ def find_file(tops, pat, er=None, expats=[]):
 
 
 def remove_dlls():
-    here = path.dirname(path.realpath(__file__))
+    here = get_root_folder()
     for g in glob(path.join(here, '*.dll')):
         os.remove(g)
+
+
+def get_root_folder():
+    return path.dirname(path.realpath(__file__))
 
 
 def look_for_dlls():
