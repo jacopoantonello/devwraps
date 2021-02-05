@@ -23,8 +23,9 @@ from glob import glob
 from os import path, walk
 from shutil import copyfile
 
+from devwraps.dll_paths import get_paths
+
 PROGFILES = os.environ['PROGRAMFILES']
-WINDIR = os.environ['WINDIR']
 log = logging.getLogger('dll_finder')
 
 
@@ -75,10 +76,7 @@ def dll_lookup_ximea():
     log.debug(f'here: {here}; found: {found}')
     if not found:
         expats = ['32bit']
-        tops = [
-            path.join(PROGFILES, r'XIMEA'),
-            path.join(path.join(PROGFILES, path.pardir), r'XIMEA')
-        ]
+        tops = get_paths('ximea')
         try:
             dllpath = path.dirname(find_file(tops, dll_pat, expats=expats))
         except ValueError:
@@ -101,13 +99,11 @@ def dll_lookup_asdk():
     log.debug(f'here: {here}; found: {found}')
     if not found:
         expats = ['x86']
-        tops = [
-            path.join(PROGFILES, r'Alpao'),
-        ]
+        tops = get_paths('asdk')
         try:
             dllpath = path.dirname(find_file(tops, dll_pat, expats=expats))
         except ValueError:
-            log.debug(f'Unable to find Alpao\'s {dll_name}. ' +
+            log.debug(f'Unable to find ASDK\'s {dll_name}. ' +
                       'Is the driver installed?')
             return
         src = path.join(dllpath, dll_name)
@@ -126,11 +122,7 @@ def dll_lookup_mirao52e():
         log.debug(f'here: {here}; found: {found}')
         if not found:
             expats = ['i386']
-            tops = [
-                # NOTE add here the path to the Mirao installation folder
-                path.join(PROGFILES, r'ImagineOptic'),
-                path.join(PROGFILES, r'ImagineEyes'),
-            ]
+            tops = get_paths('mirao52e')
             try:
                 dllpath = path.dirname(find_file(tops, dll_pat, expats=expats))
             except ValueError:
@@ -152,9 +144,7 @@ def dll_lookup_bmc():
     except ValueError:
         pass
 
-    tops = [
-        path.join(PROGFILES, r'Boston Micromachines'),
-    ]
+    tops = get_paths('bmc')
     try:
         dll_path = find_file(tops, dll_pat, expats=[])
     except ValueError:
@@ -180,9 +170,7 @@ def dll_lookup_thorcam():
 
     log.debug(f'here: {here}; found: {found}')
     if not found:
-        tops = [
-            path.join(PROGFILES, 'Thorlabs', 'Scientific Imaging'),
-        ]
+        tops = get_paths('thorcam')
         try:
             dllpath = path.dirname(find_file(tops, dll_pat, expats=[]))
         except ValueError:
@@ -204,9 +192,7 @@ def dll_lookup_ueye():
 
     log.debug(f'here: {here}; found: {found}')
     if not found:
-        tops = [
-            path.join(PROGFILES, 'IDS', 'uEye'),
-        ]
+        tops = get_paths('ueye')
         try:
             dllpath = path.dirname(find_file(tops, dll_pat, expats=[]))
         except ValueError:
@@ -228,9 +214,7 @@ def dll_lookup_sdk3():
 
     log.debug(f'here: {here}; found: {found}')
     if not found:
-        tops = [
-            path.join(PROGFILES, 'Andor SDK3'),
-        ]
+        tops = get_paths('sdk3')
         try:
             dllpath = path.dirname(find_file(tops, dll_pat, expats=[]))
         except ValueError:

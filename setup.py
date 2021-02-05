@@ -36,12 +36,13 @@ from Cython.Build import cythonize
 from setuptools import setup
 from setuptools.extension import Extension
 
+from dll_paths import get_paths
+
+copyfile('dll_paths.py', path.join('devwraps', 'dll_paths.py'))
+
 here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
-
-PROGFILES = os.environ['PROGRAMFILES']
-WINDIR = os.environ['WINDIR']
 
 
 def find_file(tops, pat, er=None, expats=[]):
@@ -103,13 +104,9 @@ def lookup_version():
     return m.group(1)
 
 
-def make_mirao52(fillout, remove, pkgdata):
+def make_mirao52e(fillout, remove, pkgdata):
     hname = r'^mirao52e\.h$'
-    tops = [
-        # NOTE add here the path to the Mirao installation folder
-        path.join(PROGFILES, r'ImagineOptic'),
-        path.join(PROGFILES, r'ImagineEyes'),
-    ]
+    tops = get_paths('mirao52e')
     try:
         include_path = path.dirname(find_file(tops, hname, expats=[]))
     except ValueError:
@@ -139,9 +136,7 @@ def make_mirao52(fillout, remove, pkgdata):
 
 def make_asdk(fillout, remove, pkgdata):
     hname = r'^asdkType\.h$'
-    tops = [
-        path.join(PROGFILES, r'Alpao'),
-    ]
+    tops = get_paths('asdk')
     try:
         include_path = path.dirname(find_file(tops, hname, expats=[]))
     except ValueError:
@@ -165,9 +160,7 @@ def make_asdk(fillout, remove, pkgdata):
 
 def make_bmc(fillout, remove, pkgdata):
     libname = r'^BMC[0-9]*\.lib$'
-    tops = [
-        path.join(PROGFILES, r'Boston Micromachines'),
-    ]
+    tops = get_paths('bmc')
     try:
         lib_fname = find_file(tops, libname, expats=[])
         lib_path = path.dirname(lib_fname)
@@ -195,9 +188,7 @@ def make_bmc(fillout, remove, pkgdata):
 
 def make_thorcam(fillout, remove, pkgdata):
     hname = r'^uc480\.h$'
-    tops = [
-        path.join(PROGFILES, 'Thorlabs', 'Scientific Imaging'),
-    ]
+    tops = get_paths('thorcam')
     try:
         include_path = path.dirname(find_file(tops, hname, expats=['Source']))
     except ValueError:
@@ -235,9 +226,7 @@ def make_thorcam(fillout, remove, pkgdata):
 
 def make_ueye(fillout, remove, pkgdata):
     hname = r'^uEye\.h$'
-    tops = [
-        path.join(PROGFILES, 'IDS', 'uEye'),
-    ]
+    tops = get_paths('ueye')
     try:
         include_path = path.dirname(find_file(tops, hname, expats=[]))
     except ValueError:
@@ -272,9 +261,7 @@ def make_ueye(fillout, remove, pkgdata):
 
 def make_sdk3(fillout, remove, pkgdata):
     hname = r'^atcore\.h$'
-    tops = [
-        path.join(PROGFILES, 'Andor SDK3'),
-    ]
+    tops = get_paths('sdk3')
     try:
         include_path = path.dirname(find_file(tops, hname, expats=['win32']))
     except ValueError:
@@ -301,10 +288,7 @@ def make_sdk3(fillout, remove, pkgdata):
 def make_ximea(fillout, remove, pkgdata):
     libname = r'^xiapi64\.lib$'
     expats = ['32bit']
-    tops = [
-        path.join(PROGFILES, r'XIMEA'),
-        path.join(path.join(PROGFILES, path.pardir), r'XIMEA')
-    ]
+    tops = get_paths('ximea')
     try:
         dllpath = path.dirname(find_file(tops, libname, expats=expats))
     except ValueError:
@@ -352,13 +336,13 @@ for g in glob('devwraps\\*.pyx'):
     except OSError:
         print(f'error {f}')
         pass
-make_mirao52(exts, remove, pkgdata)
-# make_asdk(exts, remove, pkgdata)
-# make_bmc(exts, remove, pkgdata)
-# make_thorcam(exts, remove, pkgdata)
-# make_ueye(exts, remove, pkgdata)
-# make_sdk3(exts, remove, pkgdata)
-# make_ximea(exts, remove, pkgdata)
+make_mirao52e(exts, remove, pkgdata)
+make_asdk(exts, remove, pkgdata)
+make_bmc(exts, remove, pkgdata)
+make_thorcam(exts, remove, pkgdata)
+make_ueye(exts, remove, pkgdata)
+make_sdk3(exts, remove, pkgdata)
+make_ximea(exts, remove, pkgdata)
 names = [e.name.replace('devwraps.', '') for e in exts]
 if len(names) == 0:
     raise ValueError('No device driver was found')

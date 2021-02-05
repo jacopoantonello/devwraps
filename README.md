@@ -7,6 +7,8 @@ A collection of device wrappers for Python 3 in Windows. This library includes s
   - Multi-DM (`bmc`)
 * [ALPAO](https://www.alpao.com/) deformable mirrors
   - (`asdk`)
+* [Imagine Optic](https://www.imagine-optic.com) Mirao52e deformable mirrors
+  - (`mirao52e`)
 * [Thorlabs](https://www.thorlabs.com/software_pages/ViewSoftwarePage.cfm?Code=ThorCam) scientific cameras
   - Grayscale DCx compact USB cameras (`thorcam`)
 * [IDS](https://en.ids-imaging.com/) scientific cameras
@@ -15,6 +17,9 @@ A collection of device wrappers for Python 3 in Windows. This library includes s
   - Grayscale devices (`sdk3`)
 * [Ximea](https://www.ximea.com/) scientific cameras
   - Grayscale devices (`ximea`)
+
+### DLLs
+If some device drivers are not installed in their default location then you should edit `dll_paths.py` before running the installation. Just add the non-standard *absolute* path to the corresponding dictionary entry. For example, if the Mirao52e folder is in `C:\dir1\dir2\Mirao`, then you should add `'C:\\dir1\\dir2\\Mirao'` to `'mirao52e'`.
 
 ### Install
 * Download and install the drivers for the devices you want to use from the ones listed above. Make sure to install the development API in case this is optional.
@@ -29,6 +34,6 @@ A collection of device wrappers for Python 3 in Windows. This library includes s
 * Open an `Anaconda Prompt` and type `python -m devwraps.test`
 
 ### Known bugs
-* The `asdk` and `sdk3` modules are mostly untested
+* The `asdk`, `sdk3`, and `mirao52e` modules are mostly untested
 * Timeout error handling in `grab_image()` is incomplete
 * Continuous acquisition (`start_video()` and `stop_video()`) is mostly untested

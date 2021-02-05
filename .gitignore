@@ -9,3 +9,4 @@ dist/
 *.pyd
 __pycache__/
 /devwraps/version.py
+/devwraps/dll_paths.py
