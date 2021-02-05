@@ -115,6 +115,13 @@ def make_mirao52(fillout, remove, pkgdata):
     except ValueError:
         return
 
+    hname1 = 'mirao52e.h'
+    with open(path.join(include_path, hname1), 'r') as f:
+        incl = f.read()
+    incl = re.sub(r'static const (.*) = .*;', r'\1;', incl)
+    with open(path.join('devwraps', hname1), 'w') as f:
+        f.write(incl)
+
     libname = r'^mirao52e\.lib$'
     try:
         lib_path = path.dirname(find_file(tops, libname, expats=['i386']))
@@ -122,13 +129,12 @@ def make_mirao52(fillout, remove, pkgdata):
         return
 
     fillout.append(
-        Extension(
-            'devwraps.mirao52e', [r'devwraps\mirao52e.pyx'],
-            include_dirs=[r'devwraps',
-                          numpy.get_include(), include_path],
-            library_dirs=[lib_path],
-            libraries=['mirao52e']))
+        Extension('devwraps.mirao52e', [r'devwraps\mirao52e.pyx'],
+                  include_dirs=[r'devwraps', numpy.get_include()],
+                  library_dirs=[lib_path],
+                  libraries=['mirao52e']))
     remove.append(r'devwraps\mirao52e.c')
+    remove.append(r'devwraps\mirao52e.h')
 
 
 def make_asdk(fillout, remove, pkgdata):
@@ -347,12 +353,12 @@ for g in glob('devwraps\\*.pyx'):
         print(f'error {f}')
         pass
 make_mirao52(exts, remove, pkgdata)
-make_asdk(exts, remove, pkgdata)
-make_bmc(exts, remove, pkgdata)
-make_thorcam(exts, remove, pkgdata)
-make_ueye(exts, remove, pkgdata)
-make_sdk3(exts, remove, pkgdata)
-make_ximea(exts, remove, pkgdata)
+# make_asdk(exts, remove, pkgdata)
+# make_bmc(exts, remove, pkgdata)
+# make_thorcam(exts, remove, pkgdata)
+# make_ueye(exts, remove, pkgdata)
+# make_sdk3(exts, remove, pkgdata)
+# make_ximea(exts, remove, pkgdata)
 names = [e.name.replace('devwraps.', '') for e in exts]
 if len(names) == 0:
     raise ValueError('No device driver was found')

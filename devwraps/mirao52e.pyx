@@ -45,6 +45,8 @@ cdef extern from "mirao52e.h":
     cdef int MRO_NB_COMMAND_VALUES "MRO_NB_COMMAND_VALUES"
     ctypedef double *MroCommand
     ctypedef char MroBoolean
+    ctypedef double MroTemperature
+    ctypedef double MroIntensity
 
     cdef int MRO_OK                          "MRO_OK"
     cdef int MRO_UNKNOWN_ERROR               "MRO_UNKNOWN_ERROR"
@@ -87,7 +89,35 @@ cdef extern from "mirao52e.h":
     cdef MroBoolean mro_open(int* status)
     cdef MroBoolean mro_close(int* status)
     cdef MroBoolean mro_applyCommand(MroCommand command, MroBoolean trig, int* status)
+    cdef MroBoolean mro_applySmoothCommand(MroCommand command, MroBoolean trig, int* status)
 
+    cdef MroBoolean mro_getLastAppliedCommand(MroCommand command, int* status)
+
+    cdef MroBoolean mro_setStockCommand(MroCommand command, int index, int* status)
+    cdef MroBoolean mro_applyStockCommand(int index, MroBoolean trig, int* status)
+    cdef MroBoolean mro_applySmoothStockCommand(int index, MroBoolean trig, int* status)
+    cdef MroBoolean mro_resetCommandStock(int* status)
+    cdef MroBoolean mro_getCommandStockSize(int* size, int* status)
+    cdef MroBoolean mro_getCommandStockMaxSize(int* size, int* status)
+
+    cdef MroBoolean mro_isMonitoringEnabled(MroBoolean* enabled, int* status)
+    cdef MroBoolean mro_setMonitoringEnabled(MroBoolean enabled, int* status)
+
+    cdef MroBoolean mro_getMirrorTemperature(MroTemperature* val, int* status)
+    cdef MroBoolean mro_getPowerSupplyTemperature(MroTemperature* val, int* status)
+    cdef MroBoolean mro_getMirrorLockTemperature(MroTemperature* val, int* status)
+    cdef MroBoolean mro_getPowerSupplyLockTemperature(MroTemperature* val, int* status)
+
+    cdef MroBoolean mro_getNegativeCoilsIntensity(MroIntensity* val, int* status)
+    cdef MroBoolean mro_getPositiveCoilsIntensity(MroIntensity* val, int* status)
+    cdef MroBoolean mro_getNegativeCoilsLockIntensity(MroIntensity* val, int* status)
+    cdef MroBoolean mro_getPositiveCoilsLockIntensity(MroIntensity* val, int* status)
+
+    cdef MroBoolean mro_isLocked(MroBoolean* val, int* status)
+    cdef MroBoolean mro_isConnected(MroBoolean* val, int* status)
+
+    # cdef MroBoolean mro_registerCallback(void (*callback)(MiraoInfo*), int* status)
+    # cdef MroBoolean mro_unregisterCallback(int* status)
 
 cdef char* getMiraoErrorMessage(int status):
     if status == MRO_OK:
@@ -171,19 +201,28 @@ cdef class Mirao52e:
     cdef int opened
     cdef object transform
     cdef str defaultName
-    cdef double doubles[MRO_NB_COMMAND_VALUES]
+    cdef double *doubles
+    cdef int stock_size
 
     def __cinit__(self):
         memset(self.dllVersion, 0, MAX_DLL_VERSION)
         self.opened = 0
+        self.stock_size = 0
         self.transform = None
         self.defaultName = 'Mirao52-e'
-        self.serial = self.defaultName
+        self.doubles = <double*>malloc(MRO_NB_COMMAND_VALUES*sizeof(double))
+        if not self.doubles:
+            raise Exception('error in malloc()')
         for i in range(MRO_NB_COMMAND_VALUES):
             self.doubles[i] = 0.0
 
+    def __dealloc__(self):
+        free(self.doubles)
+        self.doubles = NULL
+
     def open(self, dev=None):
         cdef int status = 0
+        cdef MroBoolean ret = 0
 
         if mro_getVersion(self.dllVersion, &status) == MRO_FALSE:
             raise Exception(f'Error in mro_getVersion(): {getMiraoErrorMessage(status)}')
@@ -211,7 +250,12 @@ cdef class Mirao52e:
             else:
                 self.defaultName = dev
 
-        if mro_open(&status) == MRO_FALSE:
+        try:
+            ret = mro_open(&status)
+        except Exception:
+            pass
+
+        if ret == MRO_FALSE:
             if status == MRO_USB_DEVICE_NOT_FOUND:
                 raise Exception('dm not found')
         else:
@@ -219,6 +263,7 @@ cdef class Mirao52e:
 
     def get_devices(self):
         cdef int status = 0
+        cdef MroBoolean ret = 0
 
         if self.opened:
             return [self.defaultName]
@@ -226,7 +271,12 @@ cdef class Mirao52e:
             if mro_getVersion(self.dllVersion, &status) == MRO_FALSE:
                 raise Exception(f'Error in mro_getVersion(): {getMiraoErrorMessage(status)}')
 
-            if mro_open(&status) == MRO_FALSE:
+            try:
+                ret = mro_open(&status)
+            except Exception:
+                pass
+
+            if ret == MRO_FALSE:
                 if status == MRO_USB_DEVICE_NOT_FOUND:
                     return []
                 else:
@@ -256,7 +306,7 @@ cdef class Mirao52e:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def write(self, np.ndarray[double, ndim=1] array not None, int trig, int smooth):
+    def write(self, np.ndarray[double, ndim=1] array not None, int trig=0, int smooth=0):
         cdef double val
         cdef int status = 0
 
@@ -294,8 +344,13 @@ cdef class Mirao52e:
 
             self.doubles[i] = val
 
-        if mro_applyCommand(self.doubles, MRO_TRUE, &status) == MRO_FALSE:
-            raise Exception(f'Error in mro_applyCommand(): {getMiraoErrorMessage(status)}')
+        if smooth:
+            if mro_applySmoothCommand(self.doubles, MRO_TRUE, &status) == MRO_FALSE:
+                raise Exception(
+                    f'Error in mro_applySmoothCommand(): {getMiraoErrorMessage(status)}')
+        else:
+            if mro_applyCommand(self.doubles, MRO_TRUE, &status) == MRO_FALSE:
+                raise Exception(f'Error in mro_applyCommand(): {getMiraoErrorMessage(status)}')
 
     def preset(self, name, mag=0.7):
         if name == 'centre':
@@ -312,13 +367,13 @@ cdef class Mirao52e:
                 10, 16, 23, 30, 37, 43])
         elif name == 'rim':
             inds = np.array([
-                1, 2, 3, 4, 10 18, 26, 34, 42, 48, 52, 51,
+                1, 2, 3, 4, 10, 18, 26, 34, 42, 48, 52, 51,
                 50, 49, 43, 35, 27, 19, 11, 5])
         elif name == 'checker':
             inds = np.array([
                 11, 27,
                 5, 20, 36,
-                1. 13, 29, 44,
+                1, 13, 29, 44,
                 7, 22, 38, 50,
                 3, 15, 31, 46,
                 9, 24, 40, 52,
@@ -346,3 +401,186 @@ cdef class Mirao52e:
             return self.defaultName
         else:
             return None
+
+    def get_last_command(self):
+        cdef int status = 0
+
+        c = np.zeros((MRO_NB_COMMAND_VALUES,))
+        cdef np.ndarray[np.float64_t, ndim=1] buf = c
+
+        if mro_getLastAppliedCommand(<double *>buf.data, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_getLastAppliedCommand(): {getMiraoErrorMessage(status)}')
+
+        return c
+
+    def set_monitoring(self, int onoff):
+        cdef int status = 0
+
+        if mro_setMonitoringEnabled(onoff, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_setMonitoringEnabled(): {getMiraoErrorMessage(status)}')
+
+    def get_monitoring(self):
+        cdef int status = 0
+        cdef MroBoolean ison = 0
+
+        if mro_isMonitoringEnabled(&ison, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_isMonitoringEnabled(): {getMiraoErrorMessage(status)}')
+
+        return int(ison)
+
+    def get_temperatures(self):
+        cdef int status = 0
+        cdef MroTemperature val = 0
+
+        d = {}
+
+        if mro_getMirrorTemperature(&val, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_getMirrorTemperature(): {getMiraoErrorMessage(status)}')
+        d['mirror'] = val
+
+        if mro_getPowerSupplyTemperature(&val, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_getPowerSupplyTemperature(): {getMiraoErrorMessage(status)}')
+        d['power_supply'] = val
+
+        return d
+
+    def get_lock_temperatures(self):
+        cdef int status = 0
+        cdef MroTemperature val = 0
+
+        d = {}
+
+        if mro_getMirrorLockTemperature(&val, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_getMirrorLockTemperature(): {getMiraoErrorMessage(status)}')
+        d['mirror'] = val
+
+        if mro_getPowerSupplyLockTemperature(&val, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_getPowerSupplyLockTemperature(): {getMiraoErrorMessage(status)}')
+        d['power_supply'] = val
+
+        return d
+
+    def get_coils_intensity(self):
+        cdef int status = 0
+        cdef MroIntensity val1 = 0
+        cdef MroIntensity val2 = 0
+
+        if mro_getNegativeCoilsIntensity(&val1, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_getNegativeCoilsIntensity(): {getMiraoErrorMessage(status)}')
+
+        if mro_getPositiveCoilsIntensity(&val2, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_getPositiveCoilsIntensity(): {getMiraoErrorMessage(status)}')
+
+        return (val1, val2)
+
+    def get_coils_lock_intensity(self):
+        cdef int status = 0
+        cdef MroIntensity val1 = 0
+        cdef MroIntensity val2 = 0
+
+        if mro_getNegativeCoilsLockIntensity(&val1, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_getNegativeCoilsLockIntensity(): {getMiraoErrorMessage(status)}')
+
+        if mro_getPositiveCoilsLockIntensity(&val2, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_getPositiveCoilsLockIntensity(): {getMiraoErrorMessage(status)}')
+
+        return (val1, val2)
+
+    def is_locked(self):
+        cdef int status = 0
+        cdef MroBoolean ison = 0
+
+        if mro_isLocked(&ison, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_isLocked(): {getMiraoErrorMessage(status)}')
+
+        return int(ison)
+
+    def is_connected(self):
+        cdef int status = 0
+        cdef MroBoolean ison = 0
+
+        if mro_isConnected(&ison, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_isConnected(): {getMiraoErrorMessage(status)}')
+
+        return int(ison)
+
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def load_stock(self, np.ndarray[double, ndim=2] array):
+        cdef int status = 0
+        cdef int max_size = 0
+
+        if self.transform is not None:
+            array = self.transform(array)
+
+        if not self.opened:
+            raise Exception('DM not opened')
+
+        self.stock_size = 0
+        if mro_resetCommandStock(&status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_resetCommandStock(): {getMiraoErrorMessage(status)}')
+
+        if mro_getCommandStockMaxSize(&max_size, &status) == MRO_FALSE:
+            raise Exception(
+                f'Error in mro_getCommandStockMaxSize(): {getMiraoErrorMessage(status)}')
+
+        if array is None or array.shape[0] < 0:
+            return
+
+        if not isinstance(array, np.ndarray):
+            raise Exception('array must be numpy.ndarray')
+        elif array.ndim != 2:
+            raise Exception('array must be a matrix')
+        elif array.shape[1] != MRO_NB_COMMAND_VALUES:
+            raise Exception(f'array.shape[1] must be {MRO_NB_COMMAND_VALUES}')
+        elif array.dtype != np.float64:
+            raise Exception('array.dtype must be np.float64')
+        elif array.shape[0] > max_size:
+            raise Exception(f'array.shape[0] must be <= {max_size}')
+
+        for j in range(array.size[0]):
+            for i in range(MRO_NB_COMMAND_VALUES):
+                val = array[j, i]
+
+                if val > 1.0:
+                    val = 1.0
+                elif val < -1.0:
+                    val = -1.0
+
+                self.doubles[i] = val
+
+            if mro_setStockCommand(self.doubles, j, &status) == MRO_FALSE:
+                raise Exception(
+                    f'Error in mro_setStockCommand(): {getMiraoErrorMessage(status)}')
+
+        self.stock_size = array.shape[0]
+
+    def write_stock(self, int index, int trig=0, int smooth=0):
+        cdef int status = 0
+
+        if index >= self.stock_size:
+            raise ValueError(
+                f'Index {index} exceeds the current stock size {self.stock_size}')
+
+        if smooth:
+            if mro_applySmoothStockCommand(index, trig, &status) == MRO_FALSE:
+                raise Exception(
+                    f'Error in mro_applySmoothStockCommand(): {getMiraoErrorMessage(status)}')
+        else:
+            if mro_applyStockCommand(index, trig, &status) == MRO_FALSE:
+                raise Exception(
+                    f'Error in mro_applyStockCommand(): {getMiraoErrorMessage(status)}')
