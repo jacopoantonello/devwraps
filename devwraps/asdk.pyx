@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#cython: embedsignature=True
+#cython: embedsignature=True, language_level=3
 
 """Wrapper for Alpao DM
 
@@ -34,10 +34,56 @@ from glob import glob
 from libc.string cimport memset, memcpy
 from libc.stdlib cimport malloc, free
 
-from .asdkd cimport (
-    asdkDM, UInt, Scalar, asdkInit, asdkReset, asdkRelease, COMPL_STAT,
-    asdkGet, SUCCESS, asdkSend)
 
+from libc.stdint cimport (
+    uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t)
+
+
+cdef extern from "asdkType.h":
+    ctypedef char Char
+    ctypedef uint8_t UChar
+    ctypedef int16_t Short
+    ctypedef uint16_t UShort
+
+    ctypedef int32_t Int
+    ctypedef uint32_t UInt
+
+    ctypedef int64_t Long
+    ctypedef uint64_t ULong
+
+    ctypedef size_t Size_T
+    ctypedef double Scalar
+
+    cdef enum Bool:
+        False
+        True
+
+    ctypedef char* CString
+    ctypedef const char* CStrConst
+
+
+cdef extern from "asdkWrapper.h":
+    ctypedef enum COMPL_STAT:
+        SUCCESS = 0
+        FAILURE = -1
+
+    ctypedef struct asdkDM:
+        pass
+
+    cdef asdkDM *asdkInit(CStrConst serialName)
+    cdef COMPL_STAT asdkRelease(asdkDM *pDm)
+    cdef COMPL_STAT asdkSend(asdkDM *pDm, const Scalar *value)
+    cdef COMPL_STAT asdkReset(asdkDM *pDm)
+    cdef COMPL_STAT asdkSendPattern(
+        asdkDM *pDm, const Scalar *pattern, UInt nPattern, UInt nRepeat)
+    cdef COMPL_STAT asdkStop(asdkDM *pDm)
+    cdef COMPL_STAT asdkGet(asdkDM *pDm, CStrConst command, Scalar *value)
+    cdef COMPL_STAT asdkSet(asdkDM *pDm, CStrConst command, Scalar value)
+    cdef COMPL_STAT asdkSetString(
+        asdkDM *pDm, CStrConst command, CStrConst cstr)
+    cdef void asdkPrintLastError()
+    cdef COMPL_STAT asdkGetLastError(
+        UInt *errorNo, CString errMsg, Size_T errSize)
 
 np.import_array()
 DEF MAX_SERIAL_NUMBER = 128
@@ -87,7 +133,7 @@ cdef class ASDK:
         cdef COMPL_STAT ret
         cdef char *cp
         cdef unsigned int i
-        cdef Scalar tmp
+        cdef Scalar tmp = 0.
         pystr = None
 
         if self.opened and dev is not None:
@@ -211,42 +257,67 @@ cdef class ASDK:
             raise ValueError('Error in write')
 
     def preset(self, name, mag=0.7):
-        u = np.zeros((140,))
-        if name == 'centre':
-            u[34] = mag
-        elif name == 'cross':
-            inds = np.array([
-                2, 8, 16, 25, 34, 43, 52, 60, 66,
-                30, 31, 32, 33, 35, 36, 37, 38])
-            u[inds] = mag
-        elif name == 'x':
-            inds = np.array([
-                11, 18, 26, 34, 42, 50, 57,
-                5, 14, 24, 44, 54, 63])
-            u[inds] = mag
-        elif name == 'rim':
-            inds = np.array([
-                6, 7, 8, 9, 10,
-                19, 28, 37, 46, 55,
-                62, 61, 60, 59, 58,
-                49, 48, 31, 22, 13])
-            u[inds] = mag
-        elif name == 'checker':
-            c = 0
-            s = mag
-            inds = np.kron(
-                [0, 1], np.ones(1, self.size()//2)).astype(np.bool)
-            u[inds[:u.size]] = 1
-        elif name == 'arrows':
-            inds = np.array([
-                11, 18,  9, 17, 26, 27, 28,
-                16, 15, 14, 23, 32, 24, 34, 44, 54,
-                42, 50, 59, 51, 52, 53
+        if self.nacts == 69:
+            u = np.zeros((69, ))
+            if name == 'centre':
+                u[34] = mag
+            elif name == 'cross':
+                inds = np.array(
+                    [2, 8, 16, 25, 34, 43, 52, 60, 66, 30, 31, 32, 33, 35, 36, 37, 38])
+                u[inds] = mag
+            elif name == 'x':
+                inds = np.array([11, 18, 26, 34, 42, 50, 57, 5, 14, 24, 44, 54, 63])
+                u[inds] = mag
+            elif name == 'rim':
+                inds = np.concatenate((
+                    np.arange(0, 5),
+                    (11, ),
+                    (20, 29, 38, 47, 56),
+                    (63, ),
+                    np.arange(64, 69),
+                    (57, ),
+                    (12, 21, 30, 39, 48),
+                    (5, ),
+                ))
+                u[inds] = mag
+            elif name == 'checker':
+                inds = np.array([
+                    20, 38, 56, 11, 28, 46, 63, 4, 18, 36, 54, 68, 9, 26, 44, 61, 2,
+                    16, 34, 52, 66, 7, 24, 42, 59, 0, 14, 32, 50, 64, 5, 22, 40, 57,
+                    12, 30, 48
                 ])
-            u[inds] = mag
+                u[inds] = mag
+            elif name == 'arrows':
+                inds = np.array([
+                    11,
+                    18,
+                    9,
+                    17,
+                    26,
+                    27,
+                    28,
+                    7,
+                    6,
+                    5,
+                    13,
+                    22,
+                    14,
+                    24,
+                    34,
+                    44,
+                    54,
+                    60,
+                    59,
+                    58,
+                    57,
+                    50,
+                ])
+                u[inds] = mag
+            else:
+                raise NotImplementedError(name)
+            return u
         else:
-            raise NotImplementedError(name)
-        return u
+            raise NotImplementedError()
 
     def get_transform(self):
         return self.transform
