@@ -178,12 +178,9 @@ cdef class BMC:
     def write(self, np.ndarray[double, ndim=1] array not None):
         """Write actuators.
 
-        This function writes raw voltage values to the DM driver. No conversion
-        is applied. The input array should contain voltages in the range [-1,
-        1]. This voltage is linearly transformed to the [0, 1] range that is
-        accepted by the driver. If you want to use a non-linear transformation
-        like applying the square root, then apply this to the input array
-        before calling this function.
+        Write DM actuators. The input array should be in the range [-1, 1]. If
+        the `transform` object is not `None`, the array is transformed before
+        writing the DM.
 
         Parameters
         ----------

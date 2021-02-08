@@ -214,9 +214,9 @@ cdef class ASDK:
     def write(self, np.ndarray[double, ndim=1] array not None):
         """Write actuators.
 
-        This function writes raw voltage values to the DM driver. No conversion
-        is applied. The input array should contain voltages in the range [-1,
-        1].
+        Write DM actuators. The input array should be in the range [-1, 1]. If
+        the `transform` object is not `None`, the array is transformed before
+        writing the DM.
 
         Parameters
         ----------

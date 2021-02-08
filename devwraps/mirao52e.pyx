@@ -312,6 +312,10 @@ cdef class Mirao52e:
 
         """Write actuators.
 
+        Write DM actuators. The input array should be in the range [-1, 1]. If
+        the `transform` object is not `None`, the array is transformed before
+        writing the DM.
+
         Parameters
         ----------
         - `array`: `numpy` actuator values in the range [-1, 1]
