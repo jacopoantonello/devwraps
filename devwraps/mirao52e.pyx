@@ -391,7 +391,9 @@ cdef class Mirao52e:
         else:
             raise NotImplementedError(name)
         u = np.zeros((MRO_NB_COMMAND_VALUES,))
-        u[np.unique(inds).sort() - 1] = mag
+        inds = np.unique(inds)
+        inds.sort()
+        u[inds] = mag
         return u
 
     def get_transform(self):
