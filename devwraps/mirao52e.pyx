@@ -391,7 +391,7 @@ cdef class Mirao52e:
         else:
             raise NotImplementedError(name)
         u = np.zeros((MRO_NB_COMMAND_VALUES,))
-        inds = np.unique(inds)
+        inds = np.unique(inds) - 1
         inds.sort()
         u[inds] = mag
         return u
