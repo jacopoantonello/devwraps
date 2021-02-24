@@ -30,7 +30,8 @@ paths = {
         path.join(PROGFILES, r'Alpao'),
     ],
     'mirao52e': [
-        # NOTE add here the path to the Mirao installation folder here
+        # NOTE add here another path containing the following files:
+        # mirao52e.h; mirao52e.lib; mirao52e.dll; ftd2xx.dll
         path.join(PROGFILES, r'ImagineOptic'),
         path.join(PROGFILES, r'ImagineEyes'),
     ],
