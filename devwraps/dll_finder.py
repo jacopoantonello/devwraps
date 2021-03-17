@@ -116,8 +116,7 @@ def dll_lookup_asdk():
 
 
 def dll_lookup_mirao52e():
-    tups = [('mirao52e.dll', r'^mirao52e\.dll$'),
-            ('ftd2xx.dll', r'^ftd2xx\.dll$')]
+    tups = [('mirao52e.dll', r'^mirao52e\.dll$')]
     for dll_name, dll_pat in tups:
         here = path.dirname(path.realpath(__file__))
         target = path.join(here, dll_name)
@@ -136,6 +135,25 @@ def dll_lookup_mirao52e():
             src = path.join(dllpath, dll_name)
             copyfile(src, target)
             log.debug(f'copied: {src} to {target}')
+
+    here = path.dirname(path.realpath(__file__))
+    target = path.join(here, 'ftd2xx.dll')
+    found = path.isfile(target)
+
+    log.debug(f'here: {here}; found: {found}')
+    if not found:
+        expats = ['i386']
+        tops = get_paths('mirao52e')
+        try:
+            dllpath = path.dirname(
+                find_file(tops, r'^ftd2xx64\.dll$', expats=expats))
+        except ValueError:
+            log.debug(f'Unable to find Mirao52e\'s ftd2xx64.dll. ' +
+                      'Is the driver installed?')
+            return
+        src = path.join(dllpath, 'ftd2xx64.dll')
+        copyfile(src, target)
+        log.debug(f'copied: {src} to {target}')
 
 
 def dll_lookup_bmc():

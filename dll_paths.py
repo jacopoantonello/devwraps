@@ -30,8 +30,11 @@ paths = {
         path.join(PROGFILES, r'Alpao'),
     ],
     'mirao52e': [
-        # NOTE add here another path containing the following files:
-        # mirao52e.h; mirao52e.lib; mirao52e.dll; ftd2xx.dll
+        # NOTE: to use the Mirao52e you need the following files:
+        # mirao52e.h; mirao52e.lib; mirao52e.dll; ftd2xx64.dll;
+
+        # Just copy the Mirao52e CD to C:\Program Files\ImagineOptic or
+        # add a custom path below
         path.join(PROGFILES, r'ImagineOptic'),
         path.join(PROGFILES, r'ImagineEyes'),
     ],
