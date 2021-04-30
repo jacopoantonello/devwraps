@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#cython: embedsignature=True
+#cython: embedsignature=True, language_level=3
 
 """Wrapper for Andor SDK3 cameras
 
