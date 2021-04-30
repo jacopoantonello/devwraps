@@ -4,7 +4,7 @@ A collection of device wrappers for Python 3 in Windows. This library includes s
 
 ### Supported devices
 * [Boston Micromachines](http://www.bostonmicromachines.com/) deformable mirrors
-  - Multi-DM (`bmc`)
+  - Multi-DM and Kilo-C-S-DM (`bmc`)
 * [ALPAO](https://www.alpao.com/) deformable mirrors
   - (`asdk`)
 * [Imagine Optic](https://www.imagine-optic.com) Mirao52e deformable mirrors
