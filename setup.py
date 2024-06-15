@@ -45,7 +45,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 
-def find_file(tops, pat, er=None, expats=[]):
+def find_file(tops, pat, er=None, expats=[], flags=0):
     for top in tops:
         if path.isdir(top):
             for root, _, files in walk(top):
@@ -57,7 +57,7 @@ def find_file(tops, pat, er=None, expats=[]):
                         break
                 if not badroot:
                     for f in files:
-                        m = re.search(pat, f)
+                        m = re.search(pat, f, flags)
                         if m is not None:
                             return path.join(root, f)
     if er is None:
@@ -228,18 +228,22 @@ def make_ueye(fillout, remove, pkgdata):
     hname = r'^uEye\.h$'
     tops = get_paths('ueye')
     try:
-        include_path = path.dirname(find_file(tops, hname, expats=[]))
+        found = find_file(tops, hname, expats=[], flags=re.I)
+        include_path = path.dirname(found)
+        hname = path.basename(found)
     except ValueError:
         return
 
     libname = r'^uEye_api_64\.lib$'
     try:
-        lib_path = path.dirname(find_file(tops, libname, expats=[]))
+        found = find_file(tops, libname, expats=[], flags=re.I)
+        lib_path = path.dirname()
+        libname = path.basename(found)
     except ValueError:
         return
 
-    pristine = path.join(include_path, 'uEye.h')
-    patched = path.join(r'devwraps', 'uEye.h')
+    pristine = path.join(include_path, hname)
+    patched = path.join(r'devwraps', hname)
 
     with open(pristine, 'r') as f:
         incl = f.read()
