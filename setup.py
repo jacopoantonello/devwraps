@@ -237,7 +237,7 @@ def make_ueye(fillout, remove, pkgdata):
     libname = r'^uEye_api_64\.lib$'
     try:
         found = find_file(tops, libname, expats=[], flags=re.I)
-        lib_path = path.dirname()
+        lib_path = path.dirname(found)
         libname = path.basename(found)
     except ValueError:
         return
